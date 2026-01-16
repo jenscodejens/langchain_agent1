@@ -8,39 +8,52 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langchain.agents.middleware import SummarizationMiddleware
 from langchain_core.messages import HumanMessage
 from langchain.agents.middleware import wrap_tool_call
-from langchain.messages import ToolMessage
+from langchain_core.messages import ToolMessage
+from langchain_community.utilities import DuckDuckGoSearchAPIWrapper
+import logging
 
 load_dotenv()
-
+logger = logging.getLogger(__name__)
+ddg_api = DuckDuckGoSearchAPIWrapper(max_results=3)
 
 # Tool error handling
 
 @wrap_tool_call
 def handle_tool_errors(request, handler):
-    """Handle tool execution errors with custom messages."""
+    """Handle tool execution with logging and distinct error feedback."""
     try:
+        # Pass the request to the actual tool execution
         return handler(request)
     except Exception as e:
-        # Return a custom error message to the model
+        # Log the full stack trace for debugging
+        logger.error(f"Tool '{request.tool.name}' failed: {e}", exc_info=True)
+        
+        # Determine if it's an error the LLM can fix (input error) 
+        # or a system error (API down)
+        error_msg = f"System Error: The tool '{request.tool.name}' is temporarily unavailable."
+        if "validation" in str(e).lower():
+            error_msg = f"Input Error: {str(e)}. Please correct your arguments."
+
         return ToolMessage(
-            content=f"Tool error: Please check your input and try again. ({str(e)})",
-            tool_call_id=request.tool_call["id"]
+            content=error_msg,
+            tool_call_id=request.tool_call["id"],
+            status="error" # Metadata to signal failure to the agent
         )
 
 # Tools definition
 
 @tool("web_search", description="Performs a websearch using DuckDuckGo")
 def duckduckgo_web_search(query: str) -> str:
+    """Useful for searching current events or facts not in your training data.
+    Input should be a specific search query.
+    """
+    print(f"\t[-Debug Tool used: {duckduckgo_web_search.name}: {query}]") # debug purpose
     try:
-        with DDGS() as ddgs:
-            results = [r for r in ddgs.text(query, max_results=1)]
-        if results:
-            print(f"\t[Tool used: {duckduckgo_web_search.name}: {query}]")
-            return results[0].get('body', 'No body found')
-        else:
-            return "No results found"
+        # Use the standard wrapper for cleaner result handling
+        return ddg_api.run(query)
     except Exception as e:
-        return f"Error during search: {str(e)}"
+        # Let the middleware handle the exception bubble-up
+        raise RuntimeError(f"Search failed for query '{query}': {str(e)}")
 
 # Initialize the LLM
 llm_model = ChatXAI(
@@ -52,9 +65,9 @@ llm_model = ChatXAI(
 
 # Create the agent with checkpointer
 checkpointer = InMemorySaver()
-# agent_executor = create_agent(llm_model, [duckduckgo_web_search], checkpointer=checkpointer)
+
 agent_executor = create_agent(
-    model=llm_model,  # Pass the model object or string name
+    model=llm_model, 
     tools=[duckduckgo_web_search],
     middleware=[
         SummarizationMiddleware(
@@ -65,8 +78,9 @@ agent_executor = create_agent(
             ],
             keep=("messages", 5),
         ),
+        handle_tool_errors
     ],
-    checkpointer=checkpointer  # Kept as a top-level argument
+    checkpointer=checkpointer
 )
 
 
