@@ -1,0 +1,165 @@
+import os
+# import warnings
+
+from dotenv import load_dotenv
+load_dotenv()
+
+# Suppress the pydantic v1 compatibility warning
+# warnings.filterwarnings("ignore", message="Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.", category=DeprecationWarning)
+
+
+from langchain_xai import ChatXAI # https://docs.langchain.com/oss/python/integrations/chat/xai
+
+llm = ChatXAI(
+    model="grok-4-1-fast-reasoning",
+    temperature=0.5
+    # max_tokens=None,
+    # timeout=None,
+    # max_retries=2,
+    # other params...
+)
+
+
+from langchain_core.prompts import SystemMessagePromptTemplate, HumanMessagePromptTemplate
+
+# Defining the system prompt (how the AI should act)
+system_prompt = SystemMessagePromptTemplate.from_template(
+    "You are an AI assistant named that helps generate article titles."
+)
+
+# the user prompt is provided by the user, in this case however the only dynamic
+# input is the article
+user_prompt = HumanMessagePromptTemplate.from_template(
+    """You are tasked with creating a name for a article.
+The article is here for you to examine 
+
+---
+
+{article}
+
+---
+
+The name should be based of the context of the article.
+Be creative, but make sure the names are clear, catchy,
+and relevant to the theme of the article.
+
+Only output the article name, no other explanation or
+text can be provided.""",
+    input_variables=["article"]
+)
+
+from langchain_core.prompts import ChatPromptTemplate
+
+first_prompt = ChatPromptTemplate.from_messages([system_prompt, user_prompt])
+
+chain_one = ( 
+    {
+        "article": lambda x: x["article"],
+        #"name": lambda x: x["name"],
+    }
+    | first_prompt
+    | creative_llm
+    | {"article_title": lambda x: x.content}
+)
+
+article_title_msg = chain_one.invoke(
+    {
+        "article": article
+    }
+)
+
+
+
+#####################
+
+second_user_prompt = HumanMessagePromptTemplate.from_template(
+    """You are tasked with creating a description for
+the article. The article is here for you to examine:
+
+---
+
+{article}
+
+---
+
+Here is the article title '{article_title}'.
+
+Output the SEO friendly article description with 10 lines of text. Do not output
+anything other than the description.""",
+    input_variables=["article", "article_title"]
+)
+
+second_prompt = ChatPromptTemplate.from_messages([
+    system_prompt,
+    second_user_prompt
+])
+
+
+chain_two = (
+    {
+        "article": lambda x: x["article"],
+        "article_title": lambda x: x["article_title"]
+    }
+    | second_prompt
+    | llm
+    | {"summary": lambda x: x.content}
+)
+
+
+article_description_msg = chain_two.invoke({
+    "article": article,
+    "article_title": article_title_msg["article_title"]
+})
+
+llm_out = llm.invoke("Hello")
+print(llm_out)
+print("\n")
+print(article_title_msg)
+print("\n")
+print({article_title_msg['article_title']})
+print("\n")
+print(article_description_msg)
+""" print("\n")
+print(article_title_msg['article_title'])
+print(article_description_msg['summary'])
+ """
+
+
+
+
+
+ --------------------------------
+
+ import os
+
+from dotenv import load_dotenv
+load_dotenv()
+
+# from langchain.chat_models import init_chat_model
+from langchain_xai import ChatXAI
+from langchain.tools import tool
+from langchain_community.tools import DuckDuckGoSearchRun
+from duckduckgo_search import DDGS
+duckduckgo_tool = DuckDuckGoSearchRun(num_results=1)
+
+llm_model = ChatXAI(
+    model="grok-4-1-fast-reasoning",
+    temperature=0.5,
+    verbose=False,
+    timeout=25
+    # max_tokens=None,
+    # timeout=None,
+    # max_retries=2,
+    # other params...
+)
+
+model = llm_model
+# print(model.model_dump())
+
+# response = model.invoke("Write me a 200 word paragraph of AI")
+# print(response.content)
+
+# for chunk in model.stream("Why do parrots have colorful feathers"):
+#    print(chunk.content, end="", flush=True)
+
+
