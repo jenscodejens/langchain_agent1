@@ -3,17 +3,18 @@ os.environ["PYTHONIOENCODING"] = "utf-8"
 
 from datetime import datetime
 from langchain_xai import ChatXAI
-from langchain_openai import OpenAIEmbeddings
 from langchain.tools import tool
 from langgraph.checkpoint.memory import InMemorySaver
 from langchain_core.messages import BaseMessage, HumanMessage, ToolMessage, SystemMessage, AIMessage
 from langgraph.graph.message import add_messages
 from langgraph.graph import StateGraph, END
+from langchain_chroma import Chroma
 
 from typing import Annotated, Sequence, TypedDict
 from dotenv import load_dotenv
 from langchain_community.utilities import DuckDuckGoSearchAPIWrapper
 
+import ddgs
 import logging
 
 from colorama import init, Fore, Style
@@ -23,13 +24,8 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 ddg_api = DuckDuckGoSearchAPIWrapper(max_results=3)
 
-# LM Studio running bge-m3 embedding model
-embeddings = OpenAIEmbeddings(
-    model="bge-m3", 
-    openai_api_key="not-needed",
-    openai_api_base="http://localhost:1234/v1" 
-)
-
+from langchain_huggingface import HuggingFaceEmbeddings
+embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-m3")
 
 class AgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], add_messages] # provides the meta data
@@ -46,7 +42,7 @@ def current_datetime(_: str = "") -> str:
 
 @tool("web_search", description="Performs a websearch using DuckDuckGo. The LLM can choose what is relevant and how much information the reply should consist of depending on the query. Use this tool whenever you:- Need up-to-date information (news, current events, recent papers, prices, stats), don't already know the answer from training data- Want to verify / fact-check something. Use quotes for exact phrases, -exclude, site:domain.com, etc. when it helps.")
 def duckduckgo_web_search(query: str) -> str:
-    """ Simple web search using DuckDuckGo """  
+    """ Simple web search using DuckDuckGo """
     try:
         # Use the standard wrapper for cleaner result handling
         return ddg_api.run(query)
@@ -54,7 +50,28 @@ def duckduckgo_web_search(query: str) -> str:
         # Let the middleware handle the exception bubble-up
         raise RuntimeError(f"Search failed for query '{query}': {str(e)}")
 
-tools = [duckduckgo_web_search, current_datetime]
+@tool("retrieve_github_info", description="Retrieve relevant information from GitHub repositories stored in the RAG database. Use this for questions about code, repositories, or technical details from the configured GitHub repos.")
+def retrieve_github_info(query: str) -> str:
+    """ Retrieve context from GitHub repos """
+    try:
+        vectorstore = Chroma(persist_directory="./chroma_db", embedding_function=embeddings, collection_name="github_repos")
+        docs = vectorstore.similarity_search(query, k=5)
+        context = "\n\n".join([f"Source: {doc.metadata.get('source', 'unknown')}\nLanguage: {doc.metadata.get('language', 'unknown')}\n{doc.page_content}" for doc in docs])
+        return context
+    except Exception as e:
+        return f"Retrieval failed: {str(e)}"
+
+@tool("summarize_text", description="Summarize long text content to make it more concise. Use this when retrieved information is too lengthy.")
+def summarize_text(text: str) -> str:
+    """ Summarize text using the LLM """
+    try:
+        prompt = f"Summarize the following text concisely:\n\n{text}"
+        response = llm_model.invoke([SystemMessage(content="You are a summarization assistant."), HumanMessage(content=prompt)])
+        return response.content
+    except Exception as e:
+        return f"Summarization failed: {str(e)}"
+
+tools = [duckduckgo_web_search, current_datetime, retrieve_github_info, summarize_text]
 tool_dict = {tool.name: tool for tool in tools}
 
 def custom_tool_executor(state: AgentState) -> AgentState:
@@ -77,7 +94,7 @@ def custom_tool_executor(state: AgentState) -> AgentState:
     return {"messages": tool_results}
 
 
-llm_model = ChatXAI(    
+llm_model = ChatXAI(
     model="grok-4-1-fast-reasoning",
     temperature=0.3,
     timeout=25,
@@ -87,7 +104,7 @@ llm_model = ChatXAI(
 
 def model_call(state:AgentState) -> AgentState:
     system_prompt = SystemMessage(content=
-        "You are a helpful AI assistant. Please answer my query to the best of your ability. If you don't know the answer, ask for more context if needed. Use emojis only when it is suitable. Check the conversation history for recent date/time tool results. If the information is still current (e.g., within the same minute), reuse it instead of calling the tool again. Consider conversation history when deciding relevance also pay attention to words of a time-sensetive nature."
+        "You are a helpful AI assistant. Please answer my query to the best of your ability. If you don't know the answer, ask for more context if needed. Use emojis only when it is suitable. Check the conversation history for recent date/time tool results. If the information is still current (e.g., within the same minute), reuse it instead of calling the tool again. Consider conversation history when deciding relevance also pay attention to words of a time-sensitive nature. For questions about GitHub repositories, code, or technical details from stored repos, use the retrieve_github_info tool first. If retrieved information is lengthy, use summarize_text to condense it."
     )
     response = llm_model.invoke([system_prompt] + state["messages"])
     return{"messages": [response]}
@@ -148,13 +165,13 @@ def print_stream(stream):
 
 human_messages = [
     # HumanMessage(content="what is my name"),
-    HumanMessage(content="my name is Jens what date and time is it"),
-    HumanMessage(content="what date is it"),
+    #HumanMessage(content="my name is Jens what date and time is it"),
+    #HumanMessage(content="what date is it"),
     #HumanMessage(content="what time is it"),
     #HumanMessage(content="what is my name"),
     #HumanMessage(content="how did Minnesota Vikings perform in the NFL 2021?"),
-    HumanMessage(content="What is my name and did the Minnesota Vikings qualify for playoffs 2025/2026 season?"),
-    HumanMessage(content="what is the temperature in Stockholm?"),
+    #HumanMessage(content="What is my name and did the Minnesota Vikings qualify for playoffs 2025/2026 season?"),
+    #HumanMessage(content="my name is Jens, what is the temperature in Stockholm?"),
 ]
 
 config = {"configurable": {"thread_id": "conversation_1"}}
