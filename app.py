@@ -40,6 +40,7 @@ def current_datetime(_: str = "") -> str:
              "datetime": now.strftime("%Y-%m-%d %H:%M")
              }
 
+# Used during development, slow tool. Excluded from tool list currently.
 @tool("web_search", description="Performs a websearch using DuckDuckGo. The LLM can choose what is relevant and how much information the reply should consist of depending on the query. Use this tool whenever you:- Need up-to-date information (news, current events, recent papers, prices, stats), don't already know the answer from training data- Want to verify / fact-check something. Use quotes for exact phrases, -exclude, site:domain.com, etc. when it helps.")
 def duckduckgo_web_search(query: str) -> str:
     """ Simple web search using DuckDuckGo """
@@ -71,7 +72,7 @@ def summarize_text(text: str) -> str:
     except Exception as e:
         return f"Summarization failed: {str(e)}"
 
-tools = [duckduckgo_web_search, current_datetime, retrieve_github_info, summarize_text]
+tools = [current_datetime, retrieve_github_info, summarize_text]
 tool_dict = {tool.name: tool for tool in tools}
 
 def custom_tool_executor(state: AgentState) -> AgentState:
@@ -96,7 +97,8 @@ def custom_tool_executor(state: AgentState) -> AgentState:
 
 llm_model = ChatXAI(
     model="grok-4-1-fast-reasoning",
-    temperature=0.3,
+    temperature=0.0,
+    streaming=True,
     timeout=25,
     verbose=True
 ).bind_tools(tools)
@@ -104,7 +106,7 @@ llm_model = ChatXAI(
 
 def model_call(state:AgentState) -> AgentState:
     system_prompt = SystemMessage(content=
-        "You are a helpful AI assistant. Please answer my query to the best of your ability. If you don't know the answer, ask for more context if needed. Use emojis only when it is suitable. Check the conversation history for recent date/time tool results. If the information is still current (e.g., within the same minute), reuse it instead of calling the tool again. Consider conversation history when deciding relevance also pay attention to words of a time-sensitive nature. For questions about GitHub repositories, code, or technical details from stored repos, use the retrieve_github_info tool first. If retrieved information is lengthy, use summarize_text to condense it."
+        "You are a helpful AI assistant primarily working with providing information about GitHub repositories in your RAG vectorDB. Please answer my query to the best of your ability. If you don't know the answer, ask for more context if needed. Use emojis only when it is suitable. Consider conversation history when deciding relevance also pay attention to words of a time-sensitive nature. For questions about GitHub repositories, code, or technical details from stored repos, use the retrieve_github_info tool first. If retrieved information is lengthy, use summarize_text to condense it."
     )
     response = llm_model.invoke([system_prompt] + state["messages"])
     return{"messages": [response]}
