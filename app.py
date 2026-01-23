@@ -72,7 +72,7 @@ def summarize_text(text: str) -> str:
     except Exception as e:
         return f"Summarization failed: {str(e)}"
 
-tools = [current_datetime, retrieve_github_info, summarize_text]
+tools = [current_datetime, retrieve_github_info, duckduckgo_web_search]
 tool_dict = {tool.name: tool for tool in tools}
 
 def custom_tool_executor(state: AgentState) -> AgentState:
