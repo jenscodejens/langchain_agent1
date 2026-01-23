@@ -72,7 +72,7 @@ def summarize_text(text: str) -> str:
     except Exception as e:
         return f"Summarization failed: {str(e)}"
 
-tools = [current_datetime, retrieve_github_info, duckduckgo_web_search]
+tools = [current_datetime, retrieve_github_info]
 tool_dict = {tool.name: tool for tool in tools}
 
 def custom_tool_executor(state: AgentState) -> AgentState:
@@ -97,16 +97,17 @@ def custom_tool_executor(state: AgentState) -> AgentState:
 
 llm_model = ChatXAI(
     model="grok-4-1-fast-reasoning",
-    temperature=0.0,
+    temperature=0.1,
     streaming=True,
-    timeout=25,
+    timeout=60,
+    max_retries=2,
     verbose=True
 ).bind_tools(tools)
 
 
 def model_call(state:AgentState) -> AgentState:
     system_prompt = SystemMessage(content=
-        "You are a helpful AI assistant primarily working with providing information about GitHub repositories in your RAG vectorDB. Please answer my query to the best of your ability. If you don't know the answer, ask for more context if needed. Use emojis only when it is suitable. Consider conversation history when deciding relevance also pay attention to words of a time-sensitive nature. For questions about GitHub repositories, code, or technical details from stored repos, use the retrieve_github_info tool first. If retrieved information is lengthy, use summarize_text to condense it."
+        "You are a helpful AI assistant primarily working with providing information about GitHub repositories in your RAG vectorDB. Please answer my query to the best of your ability. If you don't know the answer, ask for more context if needed. Use emojis ONLY when it is suitable. Consider conversation history when deciding relevance also pay attention to words of a time-sensitive nature. For questions about GitHub repositories, code, or technical details from stored repos, use the retrieve_github_info tool first. If retrieved information is lengthy, use summarize_text to condense it."
     )
     response = llm_model.invoke([system_prompt] + state["messages"])
     return{"messages": [response]}
@@ -140,44 +141,4 @@ graph.add_edge("tools", "agent1")
 
 app = graph.compile(checkpointer=InMemorySaver())
 
-def print_stream(stream):
-    for s in stream:
-        for node_output in s.values():
-            for message in node_output.get("messages", []):
-                if isinstance(message, HumanMessage):
-                    print(Fore.GREEN + "[Human Message]\t" + message.content + Style.RESET_ALL)
-                elif isinstance(message, AIMessage):
-                    if message.tool_calls:
-                        for tool_call in message.tool_calls:
-                            print(
-                                Fore.WHITE +
-                                "[Invoke Tool]\n"
-                                f"     Tool: {Fore.BLUE}{tool_call['name']}{Fore.WHITE}\n"
-                                f"     Call ID: {tool_call['id']}\n"
-                                f"     Args:\n"
-                                f"     {tool_call['args']}" +
-                                Style.RESET_ALL
-                            )
-                    if message.content:  # Only print if there's actual content
-                        print(Fore.YELLOW + "[AI Message]\t" + message.content + Style.RESET_ALL)
-                elif isinstance(message, ToolMessage):
-                    print(Fore.BLUE + "[Tool Message]\t" + message.content + Style.RESET_ALL)
-                else:
-                    print(message.content)  # Fallback
-
-human_messages = [
-    # HumanMessage(content="what is my name"),
-    #HumanMessage(content="my name is Jens what date and time is it"),
-    #HumanMessage(content="what date is it"),
-    #HumanMessage(content="what time is it"),
-    #HumanMessage(content="what is my name"),
-    #HumanMessage(content="how did Minnesota Vikings perform in the NFL 2021?"),
-    #HumanMessage(content="What is my name and did the Minnesota Vikings qualify for playoffs 2025/2026 season?"),
-    #HumanMessage(content="my name is Jens, what is the temperature in Stockholm?"),
-]
-
 config = {"configurable": {"thread_id": "conversation_1"}}
-for msg in human_messages:
-    print(Fore.GREEN + "[Human Message]\t" + msg.content + Style.RESET_ALL)
-    inputs = {"messages": [msg]}
-    print_stream(app.stream(inputs, config=config, stream_mode="updates"))

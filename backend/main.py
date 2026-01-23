@@ -1,6 +1,7 @@
 import chainlit as cl
-from app import app as langgraph_app
+from agent import app as langgraph_app
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
+
 
 @cl.on_message
 async def main(message: cl.Message):

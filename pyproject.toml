@@ -18,6 +18,7 @@ dependencies = [
     "langchain-huggingface>=1.2.0",
     "langchain-xai>=1.2.1",
     "langgraph-checkpoint==4.0.0",
+    "psutil>=7.2.1",
     "python-dotenv>=1.2.1",
     "sentence-transformers>=5.2.0",
 ]
