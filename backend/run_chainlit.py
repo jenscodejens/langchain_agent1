@@ -21,11 +21,15 @@ if __name__ == "__main__":
         print(f"\n- You can run with a different port using: chainlit run --port <port> backend/main.py")
         sys.exit(1)
     else:
-        print(f"\n- Port 8000 is free. Starting Chainlit...")
-        # Run chainlit
-        cmd = [sys.executable, "-m", "chainlit", "run", "--port", str(port), "backend/main.py"]
+        print(f"\n- Port 8000 is free. Starting Chainlit with watch mode...")
+        # Lägg till "-w" i listan nedan
+        cmd = [sys.executable, "-m", "chainlit", "run", "backend/main.py", "--port", str(port), "-w"]
         try:
-            subprocess.run(cmd)
+            subprocess.run(cmd, stdout=None, stderr=None)  # Allow output to show
         except KeyboardInterrupt:
             print(f"\n- Interrupted by user. Exiting...")
             sys.exit(0)
+
+if __name__ == "__main__":
+    from chainlit.cli import run_chainlit
+    run_chainlit(__file__) 

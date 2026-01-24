@@ -4,7 +4,7 @@ function updateAIAvatars() {
   const iconSrc = isDark ? '/public/ai-dark-theme.svg' : '/public/ai-light-theme.svg';
 
   // Target AI message avatars using alt attribute or src
-  document.querySelectorAll('img[alt="Avatar for Assistant"], img[src*="avatars/Assistant"]').forEach(img => {
+  document.querySelectorAll('img[alt="Avatar for Assistant"], img[alt="Avatar for assistant"], img[src*="avatars/Assistant"]').forEach(img => {
     img.src = iconSrc;
   });
 }
@@ -25,11 +25,11 @@ const bodyObserver = new MutationObserver((mutations) => {
   mutations.forEach((mutation) => {
     mutation.addedNodes.forEach((node) => {
       if (node.nodeType === Node.ELEMENT_NODE) {
-        if (node.tagName === 'IMG' && (node.alt === 'Avatar for Assistant' || node.src.includes('avatars/Assistant'))) {
+        if (node.tagName === 'IMG' && (node.alt === 'Avatar for Assistant' || node.alt === 'Avatar for assistant' || node.src.includes('avatars/Assistant'))) {
           updateAIAvatars();
         } else {
           // Check descendants
-          node.querySelectorAll && node.querySelectorAll('img[alt="Avatar for Assistant"], img[src*="avatars/Assistant"]').forEach(img => {
+          node.querySelectorAll && node.querySelectorAll('img[alt="Avatar for Assistant"], img[alt="Avatar for assistant"], img[src*="avatars/Assistant"]').forEach(img => {
             updateAIAvatars();
           });
         }

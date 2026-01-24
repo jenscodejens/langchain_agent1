@@ -15,13 +15,14 @@ def serializable_dict(obj):
 async def main(message: cl.Message):
     config = {"configurable": {"thread_id": cl.user_session.get("thread_id", "default")}}
     inputs = {"messages": [HumanMessage(content=message.content)]}
-    
+
     ai_msg = None
     tool_steps = {}
+    total_tokens = cl.user_session.get("total_tokens", 0)
     
     async for event in langgraph_app.astream_events(inputs, config=config, version="v2"):
         kind = event["event"]
-        
+
         if kind == "on_tool_start":
             tool_name = event.get("name", "Tool")
             tool_input = event["data"].get("input")
@@ -64,10 +65,20 @@ async def main(message: cl.Message):
 
         elif kind == "on_chat_model_stream":
             chunk = event["data"]["chunk"]
-            if chunk.content:
+            if hasattr(chunk, 'content') and chunk.content:
                 if not ai_msg:
-                    ai_msg = cl.Message(content="")
+                    ai_msg = cl.Message(content="", author="assistant")
+                    await ai_msg.send()
                 await ai_msg.stream_token(chunk.content)
+
+        elif kind == "on_chat_model_end":
+            output = event["data"]["output"]
+            if hasattr(output, 'usage_metadata'):
+                usage = output.usage_metadata
+                tokens = usage.get("total_tokens", 0)
+                total_tokens += tokens
+                cl.user_session.set("total_tokens", total_tokens)
+                await cl.Message(content=f"**Tokens used in this response:** {tokens}\n**Total tokens so far:** {total_tokens}", author="system").send()
 
     # Ensure the final AI message is sent after streaming finishes
     if ai_msg:
