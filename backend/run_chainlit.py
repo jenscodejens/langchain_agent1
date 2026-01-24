@@ -1,6 +1,10 @@
+import os
 import psutil
 import subprocess
 import sys
+
+# Clear the terminal screen
+os.system('clear')
 
 def check_port_usage(port=8000):
     """Check if port is in use and return process info."""

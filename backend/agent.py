@@ -72,7 +72,7 @@ def summarize_text(text: str) -> str:
     except Exception as e:
         return f"Summarization failed: {str(e)}"
 
-tools = [current_datetime, retrieve_github_info]
+tools = [current_datetime, retrieve_github_info, summarize_text]
 tool_dict = {tool.name: tool for tool in tools}
 
 def custom_tool_executor(state: AgentState) -> AgentState:
@@ -94,10 +94,10 @@ def custom_tool_executor(state: AgentState) -> AgentState:
             tool_results.append(ToolMessage(content=f"Unknown tool: {tool_name}", tool_call_id=tool_call["id"], status="error"))
     return {"messages": tool_results}
 
-
+# Temperature set to 0 for the moment, add another llm config for non-github related questions in the future. 
 llm_model = ChatXAI(
     model="grok-4-1-fast-reasoning",
-    temperature=0.1,
+    temperature=0,
     streaming=True,
     timeout=60,
     max_retries=2,
@@ -107,7 +107,7 @@ llm_model = ChatXAI(
 
 def model_call(state:AgentState) -> AgentState:
     system_prompt = SystemMessage(content=
-        "You are a helpful AI assistant primarily working with providing information about GitHub repositories in your RAG vectorDB. Please answer my query to the best of your ability. If you don't know the answer, ask for more context if needed. Use emojis ONLY when it is suitable. Consider conversation history when deciding relevance also pay attention to words of a time-sensitive nature. For questions about GitHub repositories, code, or technical details from stored repos, use the retrieve_github_info tool first. If retrieved information is lengthy, use summarize_text to condense it."
+        "You are a helpful AI assistant primarily working with providing information about GitHub repositories in your RAG vectorDB. Please answer my query to the best of your ability. If you don't know the answer, ask for more context. Use emojis ONLY when it is suitable. Consider conversation history when deciding relevance also pay attention to words of a time-sensitive nature. For questions about GitHub repositories, code, or technical details from stored repos, use the retrieve_github_info tool first. If retrieved information is lengthy, use summarize_text to condense it."
     )
     response = llm_model.invoke([system_prompt] + state["messages"])
     return{"messages": [response]}
