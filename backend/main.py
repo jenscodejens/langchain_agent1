@@ -1,7 +1,15 @@
 import chainlit as cl
 from agent import app as langgraph_app
-from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
+from langchain_core.messages import HumanMessage
+import json
 
+def serializable_dict(obj):
+    """Recursively converts LangChain messages to serializable dicts."""
+    if hasattr(obj, "to_json"):
+        return obj.to_json()
+    if hasattr(obj, "dict"):
+        return obj.dict()
+    return str(obj)
 
 @cl.on_message
 async def main(message: cl.Message):
@@ -9,28 +17,60 @@ async def main(message: cl.Message):
     inputs = {"messages": [HumanMessage(content=message.content)]}
     
     ai_msg = None
+    tool_steps = {}
     
     async for event in langgraph_app.astream_events(inputs, config=config, version="v2"):
-        if event["event"] == "on_chat_model_stream":
+        kind = event["event"]
+        
+        if kind == "on_tool_start":
+            tool_name = event.get("name", "Tool")
+            tool_input = event["data"].get("input")
+            run_id = event["run_id"]
+            tokens_used = event["data"].get("tokens_used", "N/A")
+            
+            # Send basic info as a message (visible outside any expandable elements)
+            await cl.Message(content=(
+                f"**Tool:** {tool_name}\n"
+                f"**Tool ID:** `{run_id}`\n"
+                f"**Arguments:** `{json.dumps(tool_input)}`\n"
+                f"**Tokens Used:** `{tokens_used}`"
+            )).send()
+            
+            # Step for expandable details
+            step = cl.Step(name=f"{tool_name} Execution", type="tool")
+            await step.send()
+            tool_steps[run_id] = step
+
+        elif kind == "on_tool_end":
+            run_id = event["run_id"]
+            if run_id in tool_steps:
+                step = tool_steps[run_id]
+                tool_output = event["data"].get("output")
+                
+                # Metadata extraction with safe serialization
+                # Use .dict() or string conversion to avoid TypeError
+                safe_data = json.dumps(event["data"], default=serializable_dict, indent=2)
+                
+                # Place content and metadata INSIDE expandable element
+                details = cl.Text(
+                    name="Response & Metadata",
+                    content=f"### Tool Response\n{tool_output}\n\n### Full Metadata\n```json\n{safe_data}\n```",
+                    display="inline" # Inline in a step creates an expandable element
+                )
+                
+                step.elements = [details]
+                step.output = "Tool execution completed."
+                await step.update()
+
+        elif kind == "on_chat_model_stream":
             chunk = event["data"]["chunk"]
             if chunk.content:
                 if not ai_msg:
                     ai_msg = cl.Message(content="")
-                    await ai_msg.send()
-                ai_msg.content += chunk.content
-                await ai_msg.update()
-        elif event["event"] == "on_chat_model_end":
-            # Handle tool calls if present in the final message
-            final_msg = event["data"]["output"]
-            if hasattr(final_msg, 'tool_calls') and final_msg.tool_calls and ai_msg:
-                tool_text = "\n\nTool Calls:\n" + "\n".join([
-                    f"- {tc['name']}: {tc['args']}" for tc in final_msg.tool_calls
-                ])
-                ai_msg.content += tool_text
-                await ai_msg.update()
-        elif event["event"] == "on_tool_end":
-            tool_output = event["data"]["output"]
-            tool_msg = cl.Message(content=f"**Tool Result:** {tool_output}")
-            await tool_msg.send()
-    
+                await ai_msg.stream_token(chunk.content)
+
+    # Ensure the final AI message is sent after streaming finishes
+    if ai_msg:
+        await ai_msg.send()
+
     cl.user_session.set("thread_id", config["configurable"]["thread_id"])
