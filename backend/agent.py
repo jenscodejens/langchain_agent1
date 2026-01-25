@@ -1,8 +1,7 @@
 import os
-os.environ["PYTHONIOENCODING"] = "utf-8"
+# os.environ["PYTHONIOENCODING"] = "utf-8"
 
 from datetime import datetime
-from langchain_xai import ChatXAI
 from langchain.tools import tool
 from langgraph.checkpoint.memory import InMemorySaver
 from langchain_core.messages import BaseMessage, HumanMessage, ToolMessage, SystemMessage, AIMessage
@@ -24,8 +23,7 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 ddg_api = DuckDuckGoSearchAPIWrapper(max_results=3)
 
-from langchain_huggingface import HuggingFaceEmbeddings
-embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-m3")
+from llm_config import embeddings, llm_model
 
 class AgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], add_messages] # provides the meta data
@@ -75,6 +73,8 @@ def summarize_text(text: str) -> str:
 tools = [current_datetime, retrieve_github_info, summarize_text]
 tool_dict = {tool.name: tool for tool in tools}
 
+llm_model = llm_model.bind_tools(tools)
+
 def custom_tool_executor(state: AgentState) -> AgentState:
     messages = state["messages"]
     last_message = messages[-1]
@@ -94,15 +94,7 @@ def custom_tool_executor(state: AgentState) -> AgentState:
             tool_results.append(ToolMessage(content=f"Unknown tool: {tool_name}", tool_call_id=tool_call["id"], status="error"))
     return {"messages": tool_results}
 
-# Temperature set to 0 for the moment, add another llm config for non-github related questions in the future. 
-llm_model = ChatXAI(
-    model="grok-4-1-fast-reasoning",
-    temperature=0,
-    streaming=True,
-    timeout=60,
-    max_retries=2,
-    verbose=True
-).bind_tools(tools)
+# Temperature set to 0 for the moment, add another llm config for non-github related questions in the future.
 
 
 def model_call(state:AgentState) -> AgentState:

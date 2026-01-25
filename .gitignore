@@ -166,6 +166,7 @@ cython_debug/
 # Custom
 .kilocode/
 chroma_db/
+embedding_model/
 temp_*/
 .chainlit/
 .files/
