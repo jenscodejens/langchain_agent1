@@ -1,5 +1,3 @@
-# Overwrite the contents of ./.chainlit/config.toml with this file /JB
-
 [project]
 # List of environment variables to be provided by each user to use the app.
 user_env = []
@@ -94,13 +92,13 @@ reaction_on_message_received = false
 
 [UI]
 # Name of the assistant.
-name = "C-3PO"
+name = "Assistant"
 
 # default_theme = "dark"
 
 # Force a specific language for all users (e.g., "en-US", "he-IL", "fr-FR")
 # If not set, the browser's language will be used
-language = "en-US"
+# language = "en-US"
 
 # layout = "wide"
 
@@ -121,7 +119,7 @@ cot = "full"
 
 # Specify a JavaScript file that can be used to customize the user interface.
 # The JavaScript file can be served from the public directory.
-custom_js = "/public/custom.js"
+# custom_js = "/public/test.js"
 
 # The style of alert boxes. Can be "classic" or "modern".
 alert_style = "classic"

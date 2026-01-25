@@ -168,6 +168,5 @@ cython_debug/
 chroma_db/
 embedding_model/
 temp_*/
-.chainlit/
 .files/
 .DS_Store
