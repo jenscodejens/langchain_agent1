@@ -3,8 +3,9 @@ import psutil
 import subprocess
 import sys
 
-# Clear the terminal screen
-os.system('clear')
+# Clear the terminal screen only if not running in Docker
+if not os.path.exists('/.dockerenv'):
+    os.system('clear')
 
 def check_port_usage(port=8000):
     """Check if port is in use and return process info."""
@@ -25,9 +26,13 @@ if __name__ == "__main__":
         print(f"\n- You can run with a different port using: chainlit run --port <port> backend/main.py")
         sys.exit(1)
     else:
-        print(f"\n- Port 8000 is free. Starting Chainlit with watch mode...")
+        disable_watch = os.environ.get('DISABLE_WATCH', 'false').lower() == 'true'
+        watch_msg = "without watch mode" if disable_watch else "with watch mode"
+        print(f"\n- Port 8000 is free. Starting Chainlit {watch_msg}...")
         # Lägg till "-w" i listan nedan
-        cmd = [sys.executable, "-m", "chainlit", "run", "backend/main.py", "--port", str(port), "-w"]
+        cmd = [sys.executable, "-m", "chainlit", "run", "backend/main.py", "--port", str(port)]
+        if not disable_watch:
+            cmd.append("-w")
         try:
             subprocess.run(cmd, stdout=None, stderr=None)  # Allow output to show
         except KeyboardInterrupt:

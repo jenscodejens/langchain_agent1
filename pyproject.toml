@@ -1,7 +1,7 @@
 [project]
-name = "my-langchain-app"
-version = "0.1.0"
-description = "Add your description here"
+name = "C-3PO"
+version = "0.5"
+description = "Agentic LangChain-based RAG application"
 readme = "README.md"
 requires-python = "==3.13.9"
 dependencies = [

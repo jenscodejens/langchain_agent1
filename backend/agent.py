@@ -49,7 +49,7 @@ def duckduckgo_web_search(query: str) -> str:
         # Let the middleware handle the exception bubble-up
         raise RuntimeError(f"Search failed for query '{query}': {str(e)}")
 
-@tool("retrieve_github_info", description="Retrieve relevant information from GitHub repositories stored in the RAG database. Use this for questions about code, repositories, or technical details from the configured GitHub repos.")
+@tool("retrieve_github_info", description="Retrieve relevant information from GitHub repositories stored in the RAG database. Use this for questions about code, repositories, or technical details from the configured GitHub repos. Show the code snippet(s) from where you base your response on")
 def retrieve_github_info(query: str) -> str:
     """ Retrieve context from GitHub repos """
     try:
