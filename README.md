@@ -44,6 +44,9 @@ AI assistant built with Chainlit, LangGraph, and HuggingFace embeddings, featuri
    ```bash
    uv sync
    ```
+      ```bash
+   chainlit
+   ```
 
 3. **Set up environment variables**
    Create a `.env` file:
