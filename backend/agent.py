@@ -1,20 +1,19 @@
 import os
-os.environ["PYTHONIOENCODING"] = "utf-8"
+# os.environ["PYTHONIOENCODING"] = "utf-8"
 
 from datetime import datetime
-from langchain_xai import ChatXAI
-from langchain_openai import OpenAIEmbeddings
 from langchain.tools import tool
 from langgraph.checkpoint.memory import InMemorySaver
-from langchain.agents.middleware import SummarizationMiddleware
 from langchain_core.messages import BaseMessage, HumanMessage, ToolMessage, SystemMessage, AIMessage
 from langgraph.graph.message import add_messages
 from langgraph.graph import StateGraph, END
+from langchain_chroma import Chroma
 
 from typing import Annotated, Sequence, TypedDict
 from dotenv import load_dotenv
 from langchain_community.utilities import DuckDuckGoSearchAPIWrapper
 
+import ddgs
 import logging
 
 from colorama import init, Fore, Style
@@ -24,13 +23,7 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 ddg_api = DuckDuckGoSearchAPIWrapper(max_results=3)
 
-# LM Studio's running bge-m3 embedding model
-embeddings = OpenAIEmbeddings(
-    model="bge-m3", 
-    openai_api_key="not-needed",
-    openai_api_base="http://localhost:1234/v1" 
-)
-
+from llm_config import embeddings, llm_model
 
 class AgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], add_messages] # provides the meta data
@@ -45,10 +38,10 @@ def current_datetime(_: str = "") -> str:
              "datetime": now.strftime("%Y-%m-%d %H:%M")
              }
 
+# Used during development, slow tool. Excluded from tool list currently.
 @tool("web_search", description="Performs a websearch using DuckDuckGo. The LLM can choose what is relevant and how much information the reply should consist of depending on the query. Use this tool whenever you:- Need up-to-date information (news, current events, recent papers, prices, stats), don't already know the answer from training data- Want to verify / fact-check something. Use quotes for exact phrases, -exclude, site:domain.com, etc. when it helps.")
 def duckduckgo_web_search(query: str) -> str:
     """ Simple web search using DuckDuckGo """
-    # print(f"\t[-Debug Tool used: {duckduckgo_web_search.name}: {query}]") # debug purpose
     try:
         # Use the standard wrapper for cleaner result handling
         return ddg_api.run(query)
@@ -56,8 +49,31 @@ def duckduckgo_web_search(query: str) -> str:
         # Let the middleware handle the exception bubble-up
         raise RuntimeError(f"Search failed for query '{query}': {str(e)}")
 
-tools = [duckduckgo_web_search, current_datetime]
+@tool("retrieve_github_info", description="Retrieve relevant information from GitHub repositories stored in the RAG database. Use this for questions about code, repositories, or technical details from the configured GitHub repos.")
+def retrieve_github_info(query: str) -> str:
+    """ Retrieve context from GitHub repos """
+    try:
+        vectorstore = Chroma(persist_directory="./chroma_db", embedding_function=embeddings, collection_name="github_repos")
+        docs = vectorstore.similarity_search(query, k=5)
+        context = "\n\n".join([f"Source: {doc.metadata.get('source', 'unknown')}\nLanguage: {doc.metadata.get('language', 'unknown')}\n{doc.page_content}" for doc in docs])
+        return context
+    except Exception as e:
+        return f"Retrieval failed: {str(e)}"
+
+@tool("summarize_text", description="Summarize long text content to make it more concise. Use this when retrieved information is too lengthy.")
+def summarize_text(text: str) -> str:
+    """ Summarize text using the LLM """
+    try:
+        prompt = f"Summarize the following text concisely:\n\n{text}"
+        response = llm_model.invoke([SystemMessage(content="You are a summarization assistant."), HumanMessage(content=prompt)])
+        return response.content
+    except Exception as e:
+        return f"Summarization failed: {str(e)}"
+
+tools = [current_datetime, retrieve_github_info, summarize_text]
 tool_dict = {tool.name: tool for tool in tools}
+
+llm_model = llm_model.bind_tools(tools)
 
 def custom_tool_executor(state: AgentState) -> AgentState:
     messages = state["messages"]
@@ -78,18 +94,12 @@ def custom_tool_executor(state: AgentState) -> AgentState:
             tool_results.append(ToolMessage(content=f"Unknown tool: {tool_name}", tool_call_id=tool_call["id"], status="error"))
     return {"messages": tool_results}
 
-
-llm_model = ChatXAI(    
-    model="grok-4-1-fast-reasoning",
-    temperature=0.3,
-    timeout=25,
-    verbose=True
-).bind_tools(tools)
+# Temperature set to 0 for the moment, add another llm config for non-github related questions in the future.
 
 
 def model_call(state:AgentState) -> AgentState:
     system_prompt = SystemMessage(content=
-        "You are a helpful AI assistant. Please answer my query to the best of your ability. If you don't know the answer, ask for more context if needed. Use emojis only when it is suitable. Check the conversation history for recent date/time tool results. If the information is still current (e.g., within the same minute), reuse it instead of calling the tool again. Consider conversation history when deciding relevance also pay attention to words of a time-sensetive nature."
+        "You are a helpful AI assistant primarily working with providing information about GitHub repositories in your RAG vectorDB. Please answer my query to the best of your ability. If you don't know the answer, ask for more context. Use emojis ONLY when it is suitable. Consider conversation history when deciding relevance also pay attention to words of a time-sensitive nature. For questions about GitHub repositories, code, or technical details from stored repos, use the retrieve_github_info tool first. If retrieved information is lengthy, use summarize_text to condense it."
     )
     response = llm_model.invoke([system_prompt] + state["messages"])
     return{"messages": [response]}
@@ -123,44 +133,4 @@ graph.add_edge("tools", "agent1")
 
 app = graph.compile(checkpointer=InMemorySaver())
 
-def print_stream(stream):
-    for s in stream:
-        for node_output in s.values():
-            for message in node_output.get("messages", []):
-                if isinstance(message, HumanMessage):
-                    print(Fore.GREEN + "[Human Message]\t" + message.content + Style.RESET_ALL)
-                elif isinstance(message, AIMessage):
-                    if message.tool_calls:
-                        for tool_call in message.tool_calls:
-                            print(
-                                Fore.WHITE +
-                                "[Invoke Tool]\n"
-                                f"     Tool: {Fore.BLUE}{tool_call['name']}{Fore.WHITE}\n"
-                                f"     Call ID: {tool_call['id']}\n"
-                                f"     Args:\n"
-                                f"     {tool_call['args']}" +
-                                Style.RESET_ALL
-                            )
-                    if message.content:  # Only print if there's actual content
-                        print(Fore.YELLOW + "[AI Message]\t" + message.content + Style.RESET_ALL)
-                elif isinstance(message, ToolMessage):
-                    print(Fore.BLUE + "[Tool Message]\t" + message.content + Style.RESET_ALL)
-                else:
-                    print(message.content)  # Fallback
-
-human_messages = [
-    # HumanMessage(content="what is my name"),
-    HumanMessage(content="my name is Jens what date and time is it"),
-    HumanMessage(content="what date is it"),
-    #HumanMessage(content="what time is it"),
-    #HumanMessage(content="what is my name"),
-    #HumanMessage(content="how did Minnesota Vikings perform in the NFL 2021?"),
-    HumanMessage(content="What is my name and did the Minnesota Vikings qualify for playoffs 2025/2026 season?"),
-    HumanMessage(content="what is the temperature in Stockholm?"),
-]
-
 config = {"configurable": {"thread_id": "conversation_1"}}
-for msg in human_messages:
-    print(Fore.GREEN + "[Human Message]\t" + msg.content + Style.RESET_ALL)
-    inputs = {"messages": [msg]}
-    print_stream(app.stream(inputs, config=config, stream_mode="updates"))
