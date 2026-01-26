@@ -1,6 +1,6 @@
 {
   "_comment": "Temporary way of adding which Github repositories (main branch) to get added to the RAG",
   "github_repos": [
-    "deedy5/ddgs"
+    "jenscodejens/doc-rag-test"
   ]
 }
