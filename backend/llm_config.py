@@ -3,6 +3,11 @@ import torch
 from langchain_xai import ChatXAI
 from langchain_huggingface import HuggingFaceEmbeddings
 
+# --------------------------------------------------------- 
+# ROCm PyTorch is not yet fully supported in Windows, so AMD
+# will use the CPU only for now. Zz
+#  ---------------------------------------------------------
+
 # Set HuggingFace cache to project root
 os.environ['HF_HOME'] = './embedding_model'
 
