@@ -1,3 +1,5 @@
+// Ask some frontend furu later on to look at it
+
 // Function to update AI message avatars based on theme
 function updateAIAvatars() {
   const isDark = document.documentElement.classList.contains('dark');
