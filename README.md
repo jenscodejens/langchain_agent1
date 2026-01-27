@@ -45,9 +45,6 @@ AI assistant built with Chainlit, LangGraph, and HuggingFace embeddings, featuri
    ```bash
    uv sync
    ```
-      ```bash
-   chainlit
-   ```
 
 3. **Set up environment variables**
    Create a `.env` file:
@@ -79,11 +76,12 @@ AI assistant built with Chainlit, LangGraph, and HuggingFace embeddings, featuri
 
 ## ⚙️ Configuration
 
-### LLM Configuration Currently (`backend/llm_config.py`)
+### LLM Configuration (`config/llm_config.py`)
 
 - Model: xAI Grok-4-1-fast-reasoning
 - Embeddings: BAAI/bge-m3 with automatic device detection
 - Cache location: `./embedding_model`
+- \U000026A0  Embeddings under Windows using an AMD GPU: will still run in CPU mode, ROCm is not fully implemented for Windows yet.
 
 ### Tools Available
 
@@ -94,27 +92,43 @@ AI assistant built with Chainlit, LangGraph, and HuggingFace embeddings, featuri
 
 ### Custom UI Features (`public/custom.js`)
 
-- Copy-to-clipboard buttons for messages
+- Copy-to-clipboard buttons for human and AI-responses
 - Theme-aware AI avatars
 - Custom styling and interactions
 
 ## 📁 Project Structure
 
 ```text
+├── .chainlit/            # Chainlit configuration
 ├── backend/
 │   ├── agent.py          # LangGraph agent with tool definitions
-│   ├── llm_config.py     # LLM and embeddings configuration
 │   ├── main.py           # Chainlit message handlers
-│   └── run_chainlit.py   # Application startup script
-├── public/
-│   ├── custom.js         # Frontend customizations
-│   └── *.svg             # Theme assets
+│   ├── run_chainlit.py   # Application startup script
+│   └── tools/            # Custom tool implementations
+│       ├── __init__.py
+│       ├── current_datetime.py
+│       ├── duckduckgo_web_search.py
+│       ├── list_tracked_repositories.py
+│       └── retrieve_github_info.py
+├── config/
+│   ├── github_repositories.json  # Tracked GitHub repositories
+│   └── llm_config.py    # LLM and embeddings configuration
 ├── docs/
 │   └── tool_call_life_cycle.png
+├── public/
+│   ├── ai-dark-theme.svg
+│   ├── ai-light-theme.svg
+│   ├── custom.js         # Frontend customizations
+│   ├── planetix.png
+│   ├── tools-dark-theme.svg
+│   └── tools-light-theme.svg
+├── util/
+│   └── progress.py       # Progress tracking utilities
 ├── initialize_rag.py     # RAG database setup
 ├── pyproject.toml        # Project dependencies
-├── uv.lock               # Dependency lock file
-└── README.md             # This file
+├── README.md             # This file
+├── requirements.txt      # Additional requirements
+└── uv.lock               # Dependency lock file
 ```
 
 ## 🔍 Key Components

@@ -64,7 +64,7 @@ def main():
     cmd = build_chainlit_command(port, is_watch_enabled)
     
     mode_status = "with watch mode" if "-w" in cmd else "without watch mode"
-    print(f"\n- Port {port} is free. Starting Chainlit {mode_status}...")
+    print(f"\U00002705  Port {port} is free. Starting Chainlit {mode_status}...")
 
     try:
         # Launch the process passing the list 'cmd' directly to subprocess.run

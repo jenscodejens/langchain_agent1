@@ -48,7 +48,7 @@ def remove_readonly(func, path, excinfo):
         pass  # Ignore if we can't change permissions
 
 # Load config
-with open('config.json', 'r') as f:
+with open('config/github_repositories.json', 'r') as f:
     config = json.load(f)
 
 github_repos = config['github_repos']

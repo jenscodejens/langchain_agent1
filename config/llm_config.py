@@ -1,4 +1,10 @@
 import os
+
+# Set HuggingFace cache to project root
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+embedding_dir = os.path.join(project_root, 'embedding_model')
+os.environ['HF_HOME'] = embedding_dir
+
 import torch
 from langchain_xai import ChatXAI
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -7,9 +13,6 @@ from langchain_huggingface import HuggingFaceEmbeddings
 # ROCm PyTorch is not yet fully supported in Windows, so AMD
 # will use the CPU only for now. Zz
 #  ---------------------------------------------------------
-
-# Set HuggingFace cache to project root
-os.environ['HF_HOME'] = './embedding_model'
 
 # Automatically detect the best available device
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -25,8 +28,7 @@ if device == "cuda":
         print(f"Detected NVIDIA Grace Blackwell APU: {device_name}")
         print("Optimizing for Coherent Unified Memory (128GB LPDDR5X)")
         # DGX Spark uses a shared memory pool; no need to restrict GPU memory growth
-        # While torch will automatically handle VRAM allocation for non-DGX, I chose 
-        # to config DGX explicitly.
+        # While torch will automatically handle VRAM allocation for non-DGX, the config DGX is explicit.
         torch.cuda.set_per_process_memory_fraction(1.0) 
         
     # Detect AMD APU/Discrete GPU
