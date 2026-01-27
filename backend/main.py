@@ -13,6 +13,7 @@ def serializable_dict(obj):
 
 @cl.on_message
 async def main(message: cl.Message):
+    """Handle incoming messages and process them through the LangGraph app."""
     config = {"configurable": {"thread_id": cl.user_session.get("thread_id", "default")}}
     inputs = {"messages": [HumanMessage(content=message.content)]}
 

@@ -12,6 +12,7 @@ from pygments.util import ClassNotFound
 from util.progress import progress_bar
 
 def advanced_file_filter(file_path):
+    """Filter files based on extensions and special names, excluding junk directories."""
     filename = os.path.basename(file_path).lower()
     
     # Ignore common junk directories

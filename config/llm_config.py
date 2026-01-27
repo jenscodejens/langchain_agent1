@@ -16,7 +16,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 
 # Automatically detect the best available device
 device = "cuda" if torch.cuda.is_available() else "cpu"
-print(f"Embeddings running on: {device.upper()}")
+print(f"✅  Embeddings running on: {device.upper()}")
 
 # APU and GPU Architecture Detection
 if device == "cuda":

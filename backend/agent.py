@@ -14,11 +14,13 @@ from config.llm_config import embeddings, llm_model
 from tools import all_tools, tool_dict
 
 class AgentState(TypedDict):
+    """State for the agent graph, containing messages."""
     messages: Annotated[Sequence[BaseMessage], add_messages] # provides the meta data
 
 llm_model = llm_model.bind_tools(all_tools)
 
 def custom_tool_executor(state: AgentState) -> AgentState:
+    """Execute tools based on the last message's tool calls."""
     messages = state["messages"]
     last_message = messages[-1]
     tool_calls = last_message.tool_calls
@@ -41,6 +43,7 @@ def custom_tool_executor(state: AgentState) -> AgentState:
 
 
 def model_call(state: AgentState) -> AgentState:
+    """Call the LLM model with system prompt and messages."""
     system_prompt = SystemMessage(content="""You are a specialized GitHub Repository Assistant. Your primary goal is to provide technical insights and information based on the documents in your RAG vector database.
 
 **Operating Guidelines:**
@@ -54,6 +57,7 @@ def model_call(state: AgentState) -> AgentState:
     return {"messages": [response]}
 
 def should_iterate(state: AgentState):
+    """Determine if the graph should iterate or end."""
     messages = state["messages"]
     last_message = messages[-1]
     if not last_message.tool_calls:
