@@ -1,79 +1,22 @@
-import os
-# os.environ["PYTHONIOENCODING"] = "utf-8"
-
-from datetime import datetime
-from langchain.tools import tool
 from langgraph.checkpoint.memory import InMemorySaver
 from langchain_core.messages import BaseMessage, HumanMessage, ToolMessage, SystemMessage, AIMessage
 from langgraph.graph.message import add_messages
 from langgraph.graph import StateGraph, END
-from langchain_chroma import Chroma
 
 from typing import Annotated, Sequence, TypedDict
 from dotenv import load_dotenv
-from langchain_community.utilities import DuckDuckGoSearchAPIWrapper
-
-import ddgs
 import logging
-
-from colorama import init, Fore, Style
-init(autoreset=True)
 
 load_dotenv()
 logger = logging.getLogger(__name__)
-ddg_api = DuckDuckGoSearchAPIWrapper(max_results=3)
 
-from llm_config import embeddings, llm_model
+from config.llm_config import embeddings, llm_model
+from tools import all_tools, tool_dict
 
 class AgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], add_messages] # provides the meta data
 
-@tool("get_date_and_time", description="Returns the current date and time.") 
-def current_datetime(_: str = "") -> str:
-     """ Returns the current date and time in multiple formats. The LLM can choose which part to use. """ 
-     now = datetime.now()
-     return {
-             "date": now.strftime("%Y-%m-%d"),
-             "time": now.strftime("%H:%M"),
-             "datetime": now.strftime("%Y-%m-%d %H:%M")
-             }
-
-# Used during development, slow tool. Excluded from tool list currently.
-@tool("web_search", description="Performs a websearch using DuckDuckGo. The LLM can choose what is relevant and how much information the reply should consist of depending on the query. Use this tool whenever you:- Need up-to-date information (news, current events, recent papers, prices, stats), don't already know the answer from training data- Want to verify / fact-check something. Use quotes for exact phrases, -exclude, site:domain.com, etc. when it helps.")
-def duckduckgo_web_search(query: str) -> str:
-    """ Simple web search using DuckDuckGo """
-    try:
-        # Use the standard wrapper for cleaner result handling
-        return ddg_api.run(query)
-    except Exception as e:
-        # Let the middleware handle the exception bubble-up
-        raise RuntimeError(f"Search failed for query '{query}': {str(e)}")
-
-@tool("retrieve_github_info", description="Retrieve relevant information from GitHub repositories stored in the RAG database. Use this for questions about code, repositories, or technical details from the configured GitHub repos. Show the code snippet(s) from where you base your response on. Note: Users often omit hyphens in repo names (e.g., 'docragtest' for 'doc-rag-test'). If a repository name is mentioned without hyphens, automatically attempt to match it to its hyphenated equivalent in the database.")
-def retrieve_github_info(query: str) -> str:
-    """ Retrieve context from GitHub repos """
-    try:
-        vectorstore = Chroma(persist_directory="./chroma_db", embedding_function=embeddings, collection_name="github_repos")
-        docs = vectorstore.similarity_search(query, k=5)
-        context = "\n\n".join([f"Source: {doc.metadata.get('source', 'unknown')}\nLanguage: {doc.metadata.get('language', 'unknown')}\n{doc.page_content}" for doc in docs])
-        return context
-    except Exception as e:
-        return f"Retrieval failed: {str(e)}"
-
-@tool("summarize_text", description="Summarize long text content to make it more concise. Use this when retrieved information is too lengthy.")
-def summarize_text(text: str) -> str:
-    """ Summarize text using the LLM """
-    try:
-        prompt = f"Summarize the following text concisely:\n\n{text}"
-        response = llm_model.invoke([SystemMessage(content="You are a summarization assistant."), HumanMessage(content=prompt)])
-        return response.content
-    except Exception as e:
-        return f"Summarization failed: {str(e)}"
-
-tools = [current_datetime, retrieve_github_info, summarize_text]
-tool_dict = {tool.name: tool for tool in tools}
-
-llm_model = llm_model.bind_tools(tools)
+llm_model = llm_model.bind_tools(all_tools)
 
 def custom_tool_executor(state: AgentState) -> AgentState:
     messages = state["messages"]
@@ -137,6 +80,7 @@ graph.add_conditional_edges(
 
 graph.add_edge("tools", "agent1")
 
+# The actual initialization of the agent
 app = graph.compile(checkpointer=InMemorySaver())
 
 config = {"configurable": {"thread_id": "conversation_1"}}
