@@ -1,6 +1,7 @@
 {
   "_comment": "Temporary way of adding which Github repositories (main branch) to get added to the RAG",
   "github_repos": [
-    "jenscodejens/doc-rag-test"
+    "jenscodejens/doc-rag-test",
+    "indiano881/ai-agentic-repo-test"
   ]
 }
