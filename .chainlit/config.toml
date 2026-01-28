@@ -1,6 +1,7 @@
 [project]
 # List of environment variables to be provided by each user to use the app.
 user_env = []
+enable_telemetry = false
 
 # Duration (in seconds) during which the session is saved when the connection is lost
 session_timeout = 3600
@@ -92,7 +93,7 @@ reaction_on_message_received = false
 
 [UI]
 # Name of the assistant.
-name = "C-3PO"
+name = "Stack von Overflow"
 
 # default_theme = "dark"
 

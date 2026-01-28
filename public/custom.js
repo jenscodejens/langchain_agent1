@@ -54,27 +54,50 @@ function manageCopyButtons() {
     // Don't add to system or tools messages
     const isSystem = step.querySelector('img[alt*="system" i]');
     const isTool = step.querySelector('img[alt*="tools" i]');
-    
+
     if (!isSystem && !isTool) {
       const messageWrapper = step.querySelector('div[id^="step-"]');
       if (messageWrapper && !messageWrapper.parentElement.querySelector('.copy-button')) {
-        const button = document.createElement('button');
-        button.className = 'copy-button inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground h-9 w-9 text-muted-foreground';
+        // Create a container for the buttons
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'flex items-center gap-1';  // Flexbox for horizontal layout
+
+        // Create the new button (left side, placeholder icon)
+        const newButton = document.createElement('button');
+        newButton.className = 'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground h-9 w-9 text-muted-foreground';
         if (step.getAttribute('data-step-type') === 'user_message') {
-          button.classList.add('ml-auto');
+          newButton.classList.add('ml-auto');
         }
-        button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy h-4 w-4" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>';
-        button.onclick = async () => {
+        // Placeholder icon (e.g., a star icon from Lucide)
+        newButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star h-4 w-4" aria-hidden="true"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon></svg>';
+        newButton.title = 'Placeholder';  // Hover text
+        // No onclick for now
+
+        // Create the copy button (right side)
+        const copyButton = document.createElement('button');
+        copyButton.className = 'copy-button inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground h-9 w-9 text-muted-foreground';
+        if (step.getAttribute('data-step-type') === 'user_message') {
+          copyButton.classList.add('ml-auto');
+        }
+        copyButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy h-4 w-4" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>';
+        copyButton.title = 'Copy to clipboard';  // Hover text
+        copyButton.onclick = async () => {
           const messageContent = step.querySelector('.message-content');
           const text = messageContent ? messageContent.textContent.trim() : '';
           try {
             await navigator.clipboard.writeText(text);
-            const originalHTML = button.innerHTML;
-            button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check h-4 w-4" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>';
-            setTimeout(() => { button.innerHTML = originalHTML; }, 2000);
+            const originalHTML = copyButton.innerHTML;
+            copyButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check h-4 w-4" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>';
+            setTimeout(() => { copyButton.innerHTML = originalHTML; }, 2000);
           } catch (err) { console.error('Failed to copy text: ', err); }
         };
-        messageWrapper.parentElement.appendChild(button);
+
+        // Append buttons to container (new button first for left position)
+        buttonContainer.appendChild(newButton);
+        buttonContainer.appendChild(copyButton);
+
+        // Append container to the message wrapper's parent
+        messageWrapper.parentElement.appendChild(buttonContainer);
       }
     }
   });

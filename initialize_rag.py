@@ -7,6 +7,7 @@ from langchain_community.document_loaders import GitLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
+from transformers import GPT2TokenizerFast
 from pygments.lexers import guess_lexer
 from pygments.util import ClassNotFound
 from util.progress import progress_bar
@@ -22,8 +23,8 @@ def advanced_file_filter(file_path):
 
     # Special architecture/config files (no extensions or specific names)
     special_names = [
-        'dockerfile', 'makefile', 'procfile', 'jenkinsfile', 
-        'vagrantfile', 'gemfile', 'rakefile', 'cargo.lock', 
+        'dockerfile', 'makefile', 'procfile', 'jenkinsfile',
+        'vagrantfile', 'gemfile', 'rakefile', 'cargo.lock',
         'go.mod', 'go.sum', 'pyproject.toml', 'package.json'
     ]
     if any(filename.startswith(name) for name in special_names):
@@ -53,6 +54,20 @@ with open('config/github_repositories.json', 'r') as f:
     config = json.load(f)
 
 github_repos = config['github_repos']
+
+# Temporary filter test
+"""
+print("Filter test:")
+test_files = ['Dockerfile', 'dockerfile', 'Dockerfile.dev', 'package.json', 'app.py']
+     for f in test_files:
+    filename = os.path.basename(f).lower()
+    ignored = any(part in f.split(os.sep) for part in {'.git', 'node_modules', '__pycache__', 'dist', 'build', 'venv', '.env'})
+    special_match = any(filename.startswith(name) for name in ['dockerfile', 'makefile', 'procfile', 'jenkinsfile', 'vagrantfile', 'gemfile', 'rakefile', 'cargo.lock', 'go.mod', 'go.sum', 'pyproject.toml', 'package.json'])
+    ext_match = any(filename.endswith(ext) for ext in ['.py', '.pyi', '.ipynb', '.js', '.jsx', '.ts', '.tsx', '.java', '.kt', '.kts', '.rs', '.go', '.c', '.cpp', '.h', '.hpp', '.cs', '.swift', '.dart', '.php', '.rb', '.sh', '.bash', '.zsh', '.ps1', '.sql', '.r', '.md', '.markdown', '.rst', '.adoc', '.txt', '.json', '.yaml', '.yml', '.toml', '.xml', '.env', '.ini'])
+    result = not ignored and (special_match or ext_match)
+    print(f"  {f} -> ignored: {ignored}, special: {special_match}, ext: {ext_match} -> INCLUDE: {result}")
+print() """
+
 persist_directory = "./chroma_db"
 
 # Check if ChromaDB exists
@@ -63,18 +78,22 @@ if os.path.exists(persist_directory):
 # Initialize Embeddings
 embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-m3")
 
-# Text splitter
-text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=1000,
-    chunk_overlap=200,
-    length_function=len,
+# Initialize GPT-2 tokenizer for token-based splitting
+tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
+
+# Token-based text splitter
+text_splitter = RecursiveCharacterTextSplitter.from_huggingface_tokenizer(
+    tokenizer=tokenizer,
+    chunk_size=256,      # Tokens
+    chunk_overlap=50,    # Token overlap
 )
 
 documents = []
 temp_dirs = []
 
+print()
 for repo in github_repos:
-    print(f"Loading repo: {repo}")
+    print(f"Processing repository: {repo}")
     # Sanitize repo name for folder paths
     safe_repo_name = repo.replace('/', '_').replace('\\', '_')
     temp_dir = f"./temp_{safe_repo_name}"
@@ -88,6 +107,7 @@ for repo in github_repos:
             file_filter=advanced_file_filter
         )
         docs = loader.load()
+        print(f"\t{len(docs)} documents processed")
         # Add source repo to metadata
         for d in docs:
             d.metadata['repo'] = repo
@@ -95,15 +115,15 @@ for repo in github_repos:
     except Exception as e:
         print(f"Failed to load {repo}: {e}")
 
-print(f"Loaded {len(documents)} total documents")
+print(f"\n\U00002705  Completed {len(github_repos)} repositories with a total of {len(documents)} documents")
 
 # Split documents
 split_docs = text_splitter.split_documents(documents)
-print(f"\nSplit into {len(split_docs)} chunks")
+print(f"\tSplit into {len(split_docs)} chunks")
 
 # Filter out invalid documents (non-strings, whitespace etc)
 split_docs = [doc for doc in split_docs if isinstance(doc.page_content, str) and doc.page_content.strip()]
-print(f"Filtered to {len(split_docs)} valid chunks\n")
+print(f"\tFiltered to {len(split_docs)} valid chunks\n")
 
 # Add language metadata using Pygments
 for doc in split_docs:
@@ -145,6 +165,6 @@ for temp_dir in temp_dirs:
             cleanup_success = False
 
 if cleanup_success:
-    print(f"\U00002705  Cleanup of temp folders performed")
+    print(f"\U00002705  Cleanup of temporary folders performed")
 else:
     print(f"\U000026A0  Cleanup of temp folders completed with warnings")
