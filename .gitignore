@@ -171,3 +171,5 @@ temp_*/
 .files/
 .DS_Store
 /mcp_server.py
+/free-port.ps1
+logs/
