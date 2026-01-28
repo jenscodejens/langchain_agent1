@@ -5,10 +5,14 @@ function updateAvatars() {
   // Define mapping for authors and their corresponding theme icons
   const avatarMap = {
     'Assistant': {
-      dark: '/public/ai-dark-theme.svg',
-      light: '/public/ai-light-theme.svg'
+      dark: '/public/avatars/ai-dark-theme.svg',
+      light: '/public/avatars/ai-light-theme.svg'
     },
     'Tools': {
+      dark: '/public/avatars/tools-dark-theme.svg',
+      light: '/public/avatars/tools-light-theme.svg'
+    },
+    'tool': {
       dark: '/public/avatars/tools-dark-theme.svg',
       light: '/public/avatars/tools-light-theme.svg'
     }

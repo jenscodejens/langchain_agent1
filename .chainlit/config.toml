@@ -146,6 +146,9 @@ logo_file_url = "public/planetix.png"
 # Load assistant avatar image directly from URL.
 default_avatar_file_url = ""
 
+[UI.avatars]
+tool = "/public/tools-light-theme.svg"
+
 # Specify a custom build directory for the frontend.
 # This can be used to customize the frontend code.
 # Be careful: If this is a relative path, it should not start with a slash.

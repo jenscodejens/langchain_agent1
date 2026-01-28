@@ -36,7 +36,7 @@ async def main(message: cl.Message):
                 f"**Tool ID:** `{run_id}`\n"
                 f"**Arguments:** `{json.dumps(tool_input)}`\n"
                 f"**Tokens Used:** `{tokens_used}`"
-            )).send()
+            ), author="Tools").send()
             
             # Step for expandable details
             step = cl.Step(name=f"{tool_name} Execution", type="tool")

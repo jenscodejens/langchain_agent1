@@ -6,6 +6,7 @@ from langgraph.graph import StateGraph, END
 from typing import Annotated, Sequence, TypedDict
 from dotenv import load_dotenv
 import logging
+from pathlib import Path
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -44,14 +45,8 @@ def custom_tool_executor(state: AgentState) -> AgentState:
 
 def model_call(state: AgentState) -> AgentState:
     """Call the LLM model with system prompt and messages."""
-    system_prompt = SystemMessage(content="""You are a specialized GitHub Repository Assistant. Your primary goal is to provide technical insights and information based on the documents in your RAG vector database.
-
-**Operating Guidelines:**
-1. **Tool Usage:** Always use the `retrieve_github_info` tool first for queries regarding repositories, codebases, or technical documentation.
-2. **Conciseness:** If the retrieved data is long or dense, apply the `summarize_text` tool to provide a clear, high-level overview.
-3. **Context Awareness:** Incorporate conversation history and prioritize time-sensitive data (especially relevant for 2026 data). 
-4. **Uncertainty:** If the database does not contain the answer, explicitly state what information is missing and ask for specific context.
-5. **Tone & Style:** Maintain a professional, helpful tone. Use emojis sparingly and only when they enhance the developer-centric context. 🛠️""")
+    system_prompt_content = Path('config/system_prompt.txt').read_text(encoding='utf-8')
+    system_prompt = SystemMessage(content=system_prompt_content)
     
     response = llm_model.invoke([system_prompt] + state["messages"])
     return {"messages": [response]}
