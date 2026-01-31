@@ -6,7 +6,7 @@ from config.llm_config import embeddings
 def retrieve_github_info(query: str) -> str:
     """ Retrieve context from GitHub repos """
     try:
-        vectorstore = Chroma(persist_directory="./chroma_db", embedding_function=embeddings, collection_name="github_repos")
+        vectorstore = Chroma(persist_directory="./chroma_doc_db", embedding_function=embeddings, collection_name="github_repos")
 
         # Detect repository mentions in query for filtering
         repo_filters = []

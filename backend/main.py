@@ -3,8 +3,10 @@ from agent import app as langgraph_app
 from langchain_core.messages import HumanMessage
 import json
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 import os
+
+log_lock = asyncio.Lock()
 
 def serializable_dict(obj):
     """Recursively converts LangChain messages to serializable dicts."""
@@ -18,9 +20,9 @@ LOG_FILE_PATH = os.path.join(os.path.dirname(__file__), '..', 'logs', 'conversat
 
 async def log_to_file(message: str):
     """Asynchronously log a message to the conversation history file."""
-    timestamp = datetime.utcnow().isoformat() + 'Z'  # ISO 8601 UTC format
+    timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')  # YYYY-MM-DD HH:MM:SS format
     log_entry = f"[{timestamp}] {message}\n"
-    async with asyncio.Lock():  # Prevent concurrent writes
+    async with log_lock:  # Prevent concurrent writes
         with open(LOG_FILE_PATH, 'a', encoding='utf-8') as f:
             f.write(log_entry)
 
@@ -47,6 +49,7 @@ async def main(message: cl.Message):
     ai_msg = None
     tool_steps = {}
     total_tokens = cl.user_session.get("total_tokens", 0)
+    message_tokens = 0
     ai_response_buffer = []
     
     async for event in langgraph_app.astream_events(inputs, config=config, version="v2"):
@@ -61,12 +64,12 @@ async def main(message: cl.Message):
             await log_to_file(f"Tool Call: {tool_name} - Input: {json.dumps(tool_input)}")
 
             # Send basic info as a message (visible outside any expandable elements)
-            await cl.Message(content=(
-                f"**Tool:** {tool_name}\n"
-                f"**Tool ID:** `{run_id}`\n"
-                f"**Arguments:** `{json.dumps(tool_input)}`\n"
-                f"**Tokens Used:** `{tokens_used}`"
-            ), author="Tools").send()
+            # await cl.Message(content=(
+            #     f"**Tool:** {tool_name}\n"
+            #     f"**Tool ID:** `{run_id}`\n"
+            #     f"**Arguments:** `{json.dumps(tool_input)}`\n"
+            #     f"**Tokens Used:** `{tokens_used}`"
+            # ), author="Tools").send()
 
             # Step for expandable details
             step = cl.Step(name=f"{tool_name} Execution", type="tool")
@@ -114,12 +117,15 @@ async def main(message: cl.Message):
             if hasattr(output, 'usage_metadata'):
                 usage = output.usage_metadata
                 tokens = usage.get("total_tokens", 0)
+                message_tokens += tokens
                 total_tokens += tokens
                 cl.user_session.set("total_tokens", total_tokens)
-                await cl.Message(content=f"**Tokens used in this response:** {tokens}\n**Total tokens so far:** {total_tokens}", author="system").send()
 
     # Ensure the final AI message is sent after streaming finishes
     if ai_msg:
         await ai_msg.send()
+
+    if message_tokens > 0:
+        await cl.Message(content=f"**Tokens used in this response:** {message_tokens}\n**Total tokens so far:** {total_tokens}", author="system").send()
 
     cl.user_session.set("thread_id", config["configurable"]["thread_id"])

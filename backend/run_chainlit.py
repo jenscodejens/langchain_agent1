@@ -17,7 +17,7 @@ def check_port_usage(port):
             pass
     return None
 
-def build_chainlit_command(port: int, watch: bool = True, debug: bool = False, headless: bool = False):
+def build_chainlit_command(port: int, watch: bool = False, debug: bool = False, headless: bool = False):
     """Build the Chainlit command list with optional flags: -w for watch mode, -d for debug mode, -h for headless mode."""
     main_file = Path("backend/main.py")
     
@@ -50,8 +50,7 @@ def main():
         print(f"    Please configure another port in ./backend/run_chainlit.py")
         sys.exit(1)
 
-    is_watch_enabled = os.environ.get('ENABLE_WATCH', 'true').lower() == 'true'
-    cmd = build_chainlit_command(port, is_watch_enabled)
+    cmd = build_chainlit_command(port)
     watch_mode = "Enabled" if "-w" in cmd else "Disabled"
     debug_mode = "Enabled" if "-d" in cmd else "Disabled"
     open_in_browser = "Disabled" if "-h" in cmd else "Enabled"
