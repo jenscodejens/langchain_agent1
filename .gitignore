@@ -165,7 +165,7 @@ cython_debug/
 
 # Custom
 .kilocode/
-chroma_db/
+github.db/
 chroma_doc_db/
 embedding_model/
 temp_*/
@@ -174,3 +174,4 @@ temp_*/
 /mcp_server.py
 /free-port.ps1
 logs/
+/README.md

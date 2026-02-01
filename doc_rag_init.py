@@ -70,7 +70,7 @@ with open('config/comms.json', 'r') as f:
 
 # BGE-M3 is powerful, but requires good chunks to perform
 embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-m3")
-persist_directory = "./chroma_doc_db"
+persist_directory = "./planetix_comms.db"
 
 # Initialize Chroma
 vectorstore = Chroma(

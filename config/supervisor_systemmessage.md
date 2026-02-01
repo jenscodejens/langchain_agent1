@@ -26,7 +26,7 @@ Handles:
 
 ## 🧭 Routing Rules
 
-Routing is performed using keyword matching (e.g., "github", "repo", "issue", "pull" for GitHub Agent; "comms" for Comms Agent) or LLM classification for ambiguous queries.
+Routing is performed using keyword matching (e.g., "github", "repo", "issue", "code" for GitHub Agent; "comms" for Comms Agent) or LLM classification for ambiguous queries.
 
 ### Route to the GitHub Agent when:
 - The user asks about code, functions, files, architecture, debugging, or implementation details.

@@ -37,10 +37,12 @@ def _execute_tools(state, tool_dict):
     tool_results = []
     for tool_call in tool_calls:
         tool_name = tool_call["name"]
+        logger.info(f"Executing tool: {tool_name}")
         tool = tool_dict.get(tool_name)
         if tool:
             try:
                 result = tool.invoke(tool_call)
+                logger.info(f"Tool '{tool_name}' executed successfully")
                 tool_results.append(ToolMessage(content=str(result), tool_call_id=tool_call["id"]))
             except Exception as e:
                 logger.error(f"Tool '{tool_name}' failed: {e}")
@@ -62,6 +64,7 @@ def github_agent_call(state):
     system_prompt = SystemMessage(content=system_prompt_content)
 
     response = github_agent_llm.invoke([system_prompt] + state["messages"])
+    logger.info(f"GitHub agent response: {response.content[:100]}...")
     return {"messages": [response]}
 
 def comms_agent_call(state):
@@ -69,6 +72,7 @@ def comms_agent_call(state):
     system_prompt = SystemMessage(content=system_prompt_content)
     
     response = comms_agent_llm.invoke([system_prompt] + state["messages"])
+    logger.info(f"Comms agent response: {response.content[:100]}...")
     return {"messages": [response]}
 
 # Supervisor function
@@ -87,24 +91,24 @@ def supervisor(state):
     
     reason = ""
     # Keyword-based routing
-    if any(word in query.lower() for word in ["github", "repo", "issue", "pull"]):
+    if any(word in query.lower() for word in ["github", "repo", "issue", "code"]):
         next_node = "github_agent"
         reason = "keyword match"
-    elif any(word in query.lower() for word in ["email", "message", "notify", "comms"]):
+    elif any(word in query.lower() for word in ["comms"]):
         next_node = "comms_agent"
         reason = "keyword match"
     else:
         # LLM-based classification
         supervisor_prompt_content = Path('config/supervisor_systemmessage.md').read_text(encoding='utf-8')
         prompt = f"""Classify query: {query}
-Options: github_agent (GitHub), comms_agent (email/msg), ambiguous (unclear). Respond ONLY with the option name."""
+Options: github_agent (GitHub), comms_agent (comms), ambiguous (unclear). Respond ONLY with the option name."""
         response = supervisor_llm.invoke([SystemMessage(content=supervisor_prompt_content), HumanMessage(content=prompt)])
         next_node = response.content.strip().lower()
         if next_node not in ["github_agent", "comms_agent", "ambiguous"]:
             next_node = "ambiguous"  # fallback
         reason = "LLM classification"
     
-    logger.info(f"Routing '{query[:50]}...' to {next_node}")
+    logger.info(f"Routing '{query[:50]}...' to {next_node} (reason: {reason})")
     return {"next": next_node, "messages": [AIMessage(content=f"Routed to {next_node}")]}
 
 # Graph construction

@@ -68,11 +68,11 @@ test_files = ['Dockerfile', 'dockerfile', 'Dockerfile.dev', 'package.json', 'app
     print(f"  {f} -> ignored: {ignored}, special: {special_match}, ext: {ext_match} -> INCLUDE: {result}")
 print() """
 
-persist_directory = "./chroma_db"
+persist_directory = "./github.db"
 
 # Check if ChromaDB exists
 if os.path.exists(persist_directory):
-    print(f"\U00002139  ChromaDB already exists, skipping initialization")
+    print(f"\U00002139  github.db already exists, skipping initialization")
     exit(0)
 
 # Initialize Embeddings
@@ -151,7 +151,7 @@ for i in range(0, total_docs, batch_size):
     progress_bar(i + len(batch), total_docs)
 
 print("\r" + " " * 120 + "\r", end="")  # Clear the ugly progress bar after completion
-print("\U00002705  ChromaDB initialized and populated")
+print("\U00002705  github.db initialized and populated")
 
 # Cleanup temp directories, small delay needed for Git to release the lock on those folders
 cleanup_success = True
