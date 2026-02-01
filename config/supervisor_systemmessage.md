@@ -20,7 +20,7 @@ Handles:
 - Code lookup
 - Architecture explanations
 - Debugging based on repository content
-- RAG‑based file retrieval
+- Enhanced RAG-based retrieval (hybrid keyword/semantic + reranking)
 
 ---
 

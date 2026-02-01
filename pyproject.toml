@@ -1,5 +1,5 @@
 [project]
-name = "C-3PO"
+name = "Slask"
 version = "0.5"
 description = "Agentic LangChain-based RAG application"
 readme = "README.md"
@@ -7,17 +7,17 @@ requires-python = "==3.13.9"
 dependencies = [
     "beautifulsoup4>=4.14.3",
     "chainlit>=2.9.5",
-    "chroma-haystack>=4.0.0",
     "colorama>=0.4.6",
     "ddgs>=9.10.0",
     "fastmcp>=0.9.0",
     "gitpython>=3.1.46",
-    "langchain>=0.2.6",
-    "langchain-chroma>=1.1.0",
-    "langchain-community>=0.4.1",
-    "langchain-core>=1.2.6",
-    "langchain-huggingface>=1.2.0",
-    "langchain-xai>=1.2.1",
+    "langchain>=0.3.0,<0.4.0",
+    "langchain-community>=0.3.0,<0.4.0",
+    "langchain-core>=0.3.0,<0.4.0",
+    "langchain-chroma>=0.1.4",        # Nu kan vi köra stabila versioner
+    "langchain-text-splitters>=0.3.0,<0.4.0",
+    "langchain-huggingface>=0.1.0,<0.2.0",
+    "langchain-xai>=0.1.0,<0.2.0",
     "langgraph-checkpoint==4.0.0",
     "psutil>=7.2.1",
     "python-dotenv>=1.2.1",
@@ -29,4 +29,5 @@ dependencies = [
 [dependency-groups]
 dev = [
     "deptry>=0.24.0",
+    "pyright>=1.1.408",
 ]

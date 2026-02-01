@@ -3,14 +3,17 @@ import json
 import shutil
 import stat
 import time
+from dotenv import load_dotenv
 from langchain_community.document_loaders import GitLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter, Language
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
-from transformers import GPT2TokenizerFast
+
 from pygments.lexers import guess_lexer
 from pygments.util import ClassNotFound
 from util.progress import progress_bar
+
+load_dotenv()
 
 def advanced_file_filter(file_path):
     """Filter files based on extensions and special names, excluding junk directories."""
@@ -42,51 +45,24 @@ def advanced_file_filter(file_path):
     return any(filename.endswith(ext) for ext in valid_extensions)
 
 def remove_readonly(func, path, excinfo):
-    """Remove read-only attribute and retry the operation."""
-    try:
-        os.chmod(path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)  # chmod 0777
-        func(path)
-    except OSError:
-        pass  # Ignore if we can't change permissions
+    """Remove read-only attribute and retry the operation (Windows fix)."""
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
 
 # Load config
 with open('config/github_repositories.json', 'r') as f:
     config = json.load(f)
 
 github_repos = config['github_repos']
-
-# Temporary filter test
-"""
-print("Filter test:")
-test_files = ['Dockerfile', 'dockerfile', 'Dockerfile.dev', 'package.json', 'app.py']
-     for f in test_files:
-    filename = os.path.basename(f).lower()
-    ignored = any(part in f.split(os.sep) for part in {'.git', 'node_modules', '__pycache__', 'dist', 'build', 'venv', '.env'})
-    special_match = any(filename.startswith(name) for name in ['dockerfile', 'makefile', 'procfile', 'jenkinsfile', 'vagrantfile', 'gemfile', 'rakefile', 'cargo.lock', 'go.mod', 'go.sum', 'pyproject.toml', 'package.json'])
-    ext_match = any(filename.endswith(ext) for ext in ['.py', '.pyi', '.ipynb', '.js', '.jsx', '.ts', '.tsx', '.java', '.kt', '.kts', '.rs', '.go', '.c', '.cpp', '.h', '.hpp', '.cs', '.swift', '.dart', '.php', '.rb', '.sh', '.bash', '.zsh', '.ps1', '.sql', '.r', '.md', '.markdown', '.rst', '.adoc', '.txt', '.json', '.yaml', '.yml', '.toml', '.xml', '.env', '.ini'])
-    result = not ignored and (special_match or ext_match)
-    print(f"  {f} -> ignored: {ignored}, special: {special_match}, ext: {ext_match} -> INCLUDE: {result}")
-print() """
-
 persist_directory = "./github.db"
 
 # Check if ChromaDB exists
 if os.path.exists(persist_directory):
-    print(f"\U00002139  github.db already exists, skipping initialization")
+    print(f"ℹ  {persist_directory} already exists, skipping initialization")
     exit(0)
 
 # Initialize Embeddings
 embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-m3")
-
-# Initialize GPT-2 tokenizer for token-based splitting
-tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
-
-# Token-based text splitter
-text_splitter = RecursiveCharacterTextSplitter.from_huggingface_tokenizer(
-    tokenizer=tokenizer,
-    chunk_size=256,      # Tokens
-    chunk_overlap=50,    # Token overlap
-)
 
 documents = []
 temp_dirs = []
@@ -94,7 +70,6 @@ temp_dirs = []
 print()
 for repo in github_repos:
     print(f"Processing repository: {repo}")
-    # Sanitize repo name for folder paths
     safe_repo_name = repo.replace('/', '_').replace('\\', '_')
     temp_dir = f"./temp_{safe_repo_name}"
     temp_dirs.append(temp_dir)
@@ -108,20 +83,70 @@ for repo in github_repos:
         )
         docs = loader.load()
         print(f"\t{len(docs)} documents processed")
-        # Add source repo to metadata
         for d in docs:
             d.metadata['repo'] = repo
         documents.extend(docs)
     except Exception as e:
         print(f"Failed to load {repo}: {e}")
 
-print(f"\n\U00002705  Completed {len(github_repos)} repositories with a total of {len(documents)} documents")
+print(f"\n✅ Completed {len(github_repos)} repositories with a total of {len(documents)} documents")
+
+# --- CORRECTED: Dynamic language-aware splitting ---
+# Dynamic language-aware splitting - Only including supported LangChain enums
+ext_to_language = {
+    ".py": Language.PYTHON,
+    ".pyi": Language.PYTHON,
+    ".js": Language.JS,
+    ".jsx": Language.JS,
+    ".ts": Language.TS,
+    ".tsx": Language.TS,
+    ".java": Language.JAVA,
+    ".kt": Language.KOTLIN,
+    ".rs": Language.RUST,
+    ".go": Language.GO,
+    ".c": Language.C,
+    ".cpp": Language.CPP,
+    ".h": Language.CPP,
+    ".hpp": Language.CPP,
+    ".cs": Language.CSHARP,
+    ".swift": Language.SWIFT,
+    ".php": Language.PHP,
+    ".rb": Language.RUBY,
+    ".md": Language.MARKDOWN,
+    ".html": Language.HTML,
+    # Språk som SQL, YAML, JSON, Dart, Bash saknar specifika enums i denna version
+    # och kommer automatiskt falla tillbaka på RecursiveCharacterTextSplitter (plain text)
+}
 
 # Split documents
-split_docs = text_splitter.split_documents(documents)
+split_docs = []
+for doc in documents:
+    source_path = doc.metadata.get("source", "")
+    _, ext = os.path.splitext(source_path)
+    # Fallback to Language.PYTHON or PLAIN if not found
+    language = ext_to_language.get(ext.lower())
+    
+    try:
+        if language:
+            splitter = RecursiveCharacterTextSplitter.from_language(
+                language=language,
+                chunk_size=1500,
+                chunk_overlap=150,
+            )
+        else:
+            splitter = RecursiveCharacterTextSplitter(
+                chunk_size=1500,
+                chunk_overlap=150,
+            )
+        chunks = splitter.split_documents([doc])
+        split_docs.extend(chunks)
+    except Exception as e:
+        # Silently skip errors for unsupported languages in certain LangChain versions
+        continue
+
 print(f"\tSplit into {len(split_docs)} chunks")
 
-# Filter out invalid documents (non-strings, whitespace etc)
+# Filter out invalid documents
 split_docs = [doc for doc in split_docs if isinstance(doc.page_content, str) and doc.page_content.strip()]
 print(f"\tFiltered to {len(split_docs)} valid chunks\n")
 
@@ -129,20 +154,21 @@ print(f"\tFiltered to {len(split_docs)} valid chunks\n")
 for doc in split_docs:
     try:
         lexer = guess_lexer(doc.page_content)
-        doc.metadata['language'] = lexer.name
+        doc.metadata['language_name'] = lexer.name
     except ClassNotFound:
-        doc.metadata['language'] = 'unknown'
+        doc.metadata['language_name'] = 'unknown'
 
-# Create Chroma vectorstore (persist)
+# --- CORRECTED: Create Chroma vectorstore ---
 total_docs = len(split_docs)
-batch_size = max(1, total_docs // 100)
+batch_size = 100 # Safe batch size for Windows/SQLite
 vectorstore = None
+
 for i in range(0, total_docs, batch_size):
     batch = split_docs[i:i+batch_size]
     if vectorstore is None:
         vectorstore = Chroma.from_documents(
             documents=batch,
-            embedding=embeddings,
+            embedding=embeddings, # Correct param for 0.1.x
             persist_directory=persist_directory,
             collection_name="github_repos"
         )
@@ -150,21 +176,16 @@ for i in range(0, total_docs, batch_size):
         vectorstore.add_documents(batch)
     progress_bar(i + len(batch), total_docs)
 
-print("\r" + " " * 120 + "\r", end="")  # Clear the ugly progress bar after completion
-print("\U00002705  github.db initialized and populated")
+print("\r" + " " * 120 + "\r", end="")
+print(f"✅ {persist_directory} initialized and populated")
 
-# Cleanup temp directories, small delay needed for Git to release the lock on those folders
-cleanup_success = True
+# Cleanup temp directories
 for temp_dir in temp_dirs:
     if os.path.exists(temp_dir):
         try:
-            time.sleep(0.2)
+            time.sleep(0.5) # Give Git time to release files
             shutil.rmtree(temp_dir, onexc=remove_readonly)
         except Exception as e:
-            print(f"\U000026A0  Warning: Failed to remove temp directory {temp_dir}: {e}")
-            cleanup_success = False
+            print(f"⚠️ Warning: Could not remove {temp_dir}: {e}")
 
-if cleanup_success:
-    print(f"\U00002705  Cleanup of temporary folders performed")
-else:
-    print(f"\U000026A0  Cleanup of temp folders completed with warnings")
+print(f"✅ Initialization complete.")
