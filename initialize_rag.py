@@ -5,7 +5,8 @@ import stat
 import time
 from dotenv import load_dotenv
 from langchain_community.document_loaders import GitLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter, Language
+# Ny import för Markdown-hantering
+from langchain_text_splitters import RecursiveCharacterTextSplitter, Language, MarkdownHeaderTextSplitter
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 
@@ -24,7 +25,7 @@ def advanced_file_filter(file_path):
     if any(part in file_path.split(os.sep) for part in ignored_parts):
         return False
 
-    # Special architecture/config files (no extensions or specific names)
+    # Special architecture/config files
     special_names = [
         'dockerfile', 'makefile', 'procfile', 'jenkinsfile',
         'vagrantfile', 'gemfile', 'rakefile', 'cargo.lock',
@@ -91,8 +92,7 @@ for repo in github_repos:
 
 print(f"\n✅ Completed {len(github_repos)} repositories with a total of {len(documents)} documents")
 
-# --- CORRECTED: Dynamic language-aware splitting ---
-# Dynamic language-aware splitting - Only including supported LangChain enums
+# --- Dynamic language-aware splitting ---
 ext_to_language = {
     ".py": Language.PYTHON,
     ".pyi": Language.PYTHON,
@@ -113,35 +113,62 @@ ext_to_language = {
     ".php": Language.PHP,
     ".rb": Language.RUBY,
     ".md": Language.MARKDOWN,
+    ".markdown": Language.MARKDOWN,
     ".html": Language.HTML,
-    # Språk som SQL, YAML, JSON, Dart, Bash saknar specifika enums i denna version
-    # och kommer automatiskt falla tillbaka på RecursiveCharacterTextSplitter (plain text)
 }
+
+# Markdown specific headers to split on
+md_headers = [
+    ("#", "Header 1"),
+    ("##", "Header 2"),
+    ("###", "Header 3"),
+    ("####", "Header 4"),
+]
+md_header_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=md_headers)
 
 # Split documents
 split_docs = []
 for doc in documents:
     source_path = doc.metadata.get("source", "")
     _, ext = os.path.splitext(source_path)
-    # Fallback to Language.PYTHON or PLAIN if not found
-    language = ext_to_language.get(ext.lower())
+    ext = ext.lower()
     
     try:
-        if language:
-            splitter = RecursiveCharacterTextSplitter.from_language(
-                language=language,
+        # SPECIAL HANDLING FOR MARKDOWN
+        if ext in [".md", ".markdown"]:
+            # First split by headers to keep structure
+            header_splits = md_header_splitter.split_text(doc.page_content)
+            
+            # Then sub-split large sections if they exceed chunk_size
+            sub_splitter = RecursiveCharacterTextSplitter(
                 chunk_size=1500,
-                chunk_overlap=150,
+                chunk_overlap=150
             )
+            # Carry over original metadata (repo etc) to the new header-based chunks
+            for split in header_splits:
+                split.metadata.update(doc.metadata)
+                
+            chunks = sub_splitter.split_documents(header_splits)
+            split_docs.extend(chunks)
+            
+        # STANDARD HANDLING FOR CODE/OTHER
         else:
-            splitter = RecursiveCharacterTextSplitter(
-                chunk_size=1500,
-                chunk_overlap=150,
-            )
-        chunks = splitter.split_documents([doc])
-        split_docs.extend(chunks)
+            language = ext_to_language.get(ext)
+            if language:
+                splitter = RecursiveCharacterTextSplitter.from_language(
+                    language=language,
+                    chunk_size=1500,
+                    chunk_overlap=150,
+                )
+            else:
+                splitter = RecursiveCharacterTextSplitter(
+                    chunk_size=1500,
+                    chunk_overlap=150,
+                )
+            chunks = splitter.split_documents([doc])
+            split_docs.extend(chunks)
+            
     except Exception as e:
-        # Silently skip errors for unsupported languages in certain LangChain versions
         continue
 
 print(f"\tSplit into {len(split_docs)} chunks")
@@ -158,9 +185,9 @@ for doc in split_docs:
     except ClassNotFound:
         doc.metadata['language_name'] = 'unknown'
 
-# --- CORRECTED: Create Chroma vectorstore ---
+# Create Chroma vectorstore
 total_docs = len(split_docs)
-batch_size = 100 # Safe batch size for Windows/SQLite
+batch_size = 100 
 vectorstore = None
 
 for i in range(0, total_docs, batch_size):
@@ -168,7 +195,7 @@ for i in range(0, total_docs, batch_size):
     if vectorstore is None:
         vectorstore = Chroma.from_documents(
             documents=batch,
-            embedding=embeddings, # Correct param for 0.1.x
+            embedding=embeddings,
             persist_directory=persist_directory,
             collection_name="github_repos"
         )
@@ -183,7 +210,7 @@ print(f"✅ {persist_directory} initialized and populated")
 for temp_dir in temp_dirs:
     if os.path.exists(temp_dir):
         try:
-            time.sleep(0.5) # Give Git time to release files
+            time.sleep(0.5) 
             shutil.rmtree(temp_dir, onexc=remove_readonly)
         except Exception as e:
             print(f"⚠️ Warning: Could not remove {temp_dir}: {e}")

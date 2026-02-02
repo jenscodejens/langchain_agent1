@@ -3,7 +3,7 @@ name = "Slask"
 version = "0.5"
 description = "Agentic LangChain-based RAG application"
 readme = "README.md"
-requires-python = "==3.13.9"
+requires-python = ">=3.12,<3.13"
 dependencies = [
     "beautifulsoup4>=4.14.3",
     "chainlit>=2.9.5",
@@ -14,19 +14,19 @@ dependencies = [
     "langchain>=0.3.0,<0.4.0",
     "langchain-community>=0.3.0,<0.4.0",
     "langchain-core>=0.3.33",
-    "langchain-chroma>=0.1.4",        # Nu kan vi köra stabila versioner
+    "langchain-chroma>=0.1.4",
     "langchain-text-splitters>=0.3.0,<0.4.0",
     "langchain-huggingface>=0.1.0,<0.2.0",
     "langchain-xai>=0.1.0,<0.2.0",
-    "langgraph-checkpoint==4.0.0",
+    "langgraph==0.2.66",
     "psutil>=7.2.1",
     "python-dotenv>=1.2.1",
     "sentence-transformers>=5.2.0",
     "torch>=2.9.1",
     "trafilatura>=1.0.0",
     "rank-bm25>=0.2.2",
-    "langgraph>=0.2.66",
     "pydantic>=2.12.5",
+    "httpx>=0.28.1",
 ]
 
 [dependency-groups]

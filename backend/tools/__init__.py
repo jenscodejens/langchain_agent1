@@ -2,14 +2,17 @@ from .current_datetime import current_datetime
 from .retrieve_github_info import retrieve_github_info
 from .list_tracked_repositories import list_tracked_repositories
 from .duckduckgo_web_search import duckduckgo_web_search
+from .read_github_file import read_github_file
 
 """
 Available tools:
 ----------------
-current_datetime
 retrieve_github_info
 list_tracked_repositories
+read_github_file
+
 duckduckgo_web_search
+current_datetime
 """
 
 # List of tools the agent has access to.
@@ -18,7 +21,7 @@ tool_dict = {tool.name: tool for tool in all_tools}
 
 # Tool groupings for multi-agent system
 shared_tools = [current_datetime]
-github_tools = [retrieve_github_info, list_tracked_repositories]
+github_tools = [retrieve_github_info, list_tracked_repositories, read_github_file]
 comms_tools = []  # placeholders for email_send, chat_notify, retrieve_comms_docs
 general_tools = [duckduckgo_web_search]
 

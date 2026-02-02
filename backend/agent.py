@@ -5,6 +5,9 @@ import logging
 import os
 
 from dotenv import load_dotenv
+
+# Configure logging to file
+logging.basicConfig(filename='logs/agent.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import StateGraph, END, START
 from langgraph.graph.message import add_messages 
@@ -77,6 +80,7 @@ def github_agent_call(state: AgentState):
     prompt_path = Path('config/github_systemmessage.md')
     prompt = prompt_path.read_text(encoding='utf-8') if prompt_path.exists() else "You are a GitHub assistant."
     response = github_agent_llm.invoke([SystemMessage(content=prompt)] + list(state["messages"]))
+    logger.info(f"GitHub agent response tool_calls: {getattr(response, 'tool_calls', [])}")
     return {"messages": [response]}
 
 def comms_agent_call(state: AgentState):

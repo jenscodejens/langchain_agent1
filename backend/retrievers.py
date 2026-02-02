@@ -9,6 +9,9 @@ from langchain.retrievers.contextual_compression import ContextualCompressionRet
 from langchain.retrievers.document_compressors import CrossEncoderReranker
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 
+# Global cache for reranker model to avoid reloading
+_reranker_model = None
+
 def get_hybrid_retriever(persist_dir="./github.db", repo_filter=None):
     """
     Creates a hybrid retriever combining dense vector search, BM25 sparse retrieval, and cross-encoder reranking.
@@ -51,8 +54,11 @@ def get_hybrid_retriever(persist_dir="./github.db", repo_filter=None):
         weights=[0.5, 0.5]
     )
 
-    # Initialize Cross-Encoder for Reranking
-    model = HuggingFaceCrossEncoder(model_name="BAAI/bge-reranker-v2-m3")
+    # Initialize Cross-Encoder for Reranking (cached to avoid reloading)
+    global _reranker_model
+    if _reranker_model is None:
+        _reranker_model = HuggingFaceCrossEncoder(model_name="BAAI/bge-reranker-v2-m3")
+    model = _reranker_model
     reranker_compressor = CrossEncoderReranker(model=model, top_n=5)
 
     retriever = ContextualCompressionRetriever(
