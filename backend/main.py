@@ -1,10 +1,12 @@
 import chainlit as cl
 from agent import app as langgraph_app
 from langchain_core.messages import HumanMessage
+from langchain_core.runnables import RunnableConfig
 import json
 import asyncio
 from datetime import datetime, timezone
 import os
+from typing import cast
 
 log_lock = asyncio.Lock()
 
@@ -36,8 +38,8 @@ async def on_session_stop():
 async def main(message: cl.Message):
     """Handle incoming messages and process them through the LangGraph app."""
     global previous_thread_id
-    config = {"configurable": {"thread_id": cl.user_session.get("thread_id", "default")}}
-    current_thread_id = config["configurable"]["thread_id"]
+    config = cast(RunnableConfig, {"configurable": {"thread_id": cl.user_session.get("thread_id", "default")}})
+    current_thread_id = config.get("configurable", {}).get("thread_id", "default")
     if previous_thread_id and previous_thread_id != current_thread_id:
         await log_to_file("=== Conversation End ===")
     previous_thread_id = current_thread_id
@@ -100,8 +102,8 @@ async def main(message: cl.Message):
                 await step.update()
 
         elif kind == "on_chat_model_stream":
-            chunk = event["data"]["chunk"]
-            if hasattr(chunk, 'content') and chunk.content:
+            chunk = event["data"].get("chunk")
+            if chunk and hasattr(chunk, 'content') and chunk.content:
                 ai_response_buffer.append(chunk.content)
                 if not ai_msg:
                     ai_msg = cl.Message(content="", author="assistant")
@@ -113,8 +115,8 @@ async def main(message: cl.Message):
             await log_to_file(f"AI: {full_ai_response}")
             ai_response_buffer.clear()  # Reset for next message
 
-            output = event["data"]["output"]
-            if hasattr(output, 'usage_metadata'):
+            output = event["data"].get("output")
+            if output and hasattr(output, 'usage_metadata') and output.usage_metadata is not None and hasattr(output.usage_metadata, 'get'):
                 usage = output.usage_metadata
                 tokens = usage.get("total_tokens", 0)
                 message_tokens += tokens
@@ -128,4 +130,4 @@ async def main(message: cl.Message):
     if message_tokens > 0:
         await cl.Message(content=f"**Tokens used in this response:** {message_tokens}\n**Total tokens so far:** {total_tokens}", author="system").send()
 
-    cl.user_session.set("thread_id", config["configurable"]["thread_id"])
+    cl.user_session.set("thread_id", config.get("configurable", {}).get("thread_id", "default"))

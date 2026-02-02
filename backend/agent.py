@@ -1,40 +1,55 @@
-from langgraph.checkpoint.memory import InMemorySaver
-from langchain_core.messages import BaseMessage, HumanMessage, ToolMessage, SystemMessage, AIMessage
-from langgraph.graph.message import add_messages
-from langgraph.graph import StateGraph, END
-
-from typing import Annotated, Sequence, TypedDict
-from dotenv import load_dotenv
-import logging
-import re
-import json
+from pydantic import BaseModel, Field
+from typing import Literal, Annotated, Sequence, TypedDict, cast
 from pathlib import Path
+import logging
+import os
 
-load_dotenv()
-logger = logging.getLogger(__name__)
+from dotenv import load_dotenv
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.graph import StateGraph, END, START
+from langgraph.graph.message import add_messages 
+from langchain_core.messages import BaseMessage, HumanMessage, ToolMessage, SystemMessage, AIMessage
 
+# Import configuration and tools
 from config.llm_config import embeddings, llm_model
 from backend.tools import (
-    shared_tools, github_tools, comms_tools,
     github_agent_tools, comms_agent_full_tools,
     github_agent_tool_dict, comms_agent_tool_dict
 )
 
+load_dotenv()
+logger = logging.getLogger(__name__)
+
+# --- SCHEMA FOR STRUCTURED OUTPUT ---
+class RouterResponse(BaseModel):
+    """Logic for how the supervisor should route the query."""
+    next_node: Literal["github_agent", "comms_agent", "ambiguous"] = Field(
+        description="The next agent that should handle the query based on the user's intent."
+    )
+    reason: str = Field(description="A brief justification for the agent choice.")
+
+# Create the structured model for the supervisor
+# Ensure your xAI model supports .with_structured_output (Grok-beta or later)
+structured_supervisor = llm_model.with_structured_output(RouterResponse)
+
 class AgentState(TypedDict):
     """State for the agent graph, containing messages."""
     messages: Annotated[Sequence[BaseMessage], add_messages]
+    next: str  # Tracks the next node for conditional edges
 
 # Bind LLMs to specific tool sets
 github_agent_llm = llm_model.bind_tools(github_agent_tools)
 comms_agent_llm = llm_model.bind_tools(comms_agent_full_tools)
-supervisor_llm = llm_model  # No tools for supervisor
 
-def _execute_tools(state, tool_dict):
+def _execute_tools(state: AgentState, tool_dict: dict):
     """Execute tools based on the last message's tool calls."""
     messages = state["messages"]
     last_message = messages[-1]
-    tool_calls = last_message.tool_calls
+    
+    # Extract tool calls safely
+    tool_calls = getattr(last_message, "tool_calls", [])
     tool_results = []
+    
     for tool_call in tool_calls:
         tool_name = tool_call["name"]
         logger.info(f"Executing tool: {tool_name}")
@@ -42,7 +57,6 @@ def _execute_tools(state, tool_dict):
         if tool:
             try:
                 result = tool.invoke(tool_call)
-                logger.info(f"Tool '{tool_name}' executed successfully")
                 tool_results.append(ToolMessage(content=str(result), tool_call_id=tool_call["id"]))
             except Exception as e:
                 logger.error(f"Tool '{tool_name}' failed: {e}")
@@ -51,65 +65,65 @@ def _execute_tools(state, tool_dict):
             tool_results.append(ToolMessage(content=f"Unknown tool: {tool_name}", tool_call_id=tool_call["id"], status="error"))
     return {"messages": tool_results}
 
-# Tool executors for each agent
-def github_agent_tool_exec(state):
+# Tool executors
+def github_agent_tool_exec(state: AgentState):
     return _execute_tools(state, github_agent_tool_dict)
 
-def comms_agent_tool_exec(state):
+def comms_agent_tool_exec(state: AgentState):
     return _execute_tools(state, comms_agent_tool_dict)
 
 # Agent call functions
-def github_agent_call(state):
-    system_prompt_content = Path('config/github_systemmessage.md').read_text(encoding='utf-8')
-    system_prompt = SystemMessage(content=system_prompt_content)
-
-    response = github_agent_llm.invoke([system_prompt] + state["messages"])
-    logger.info(f"GitHub agent response: {response.content[:100]}...")
+def github_agent_call(state: AgentState):
+    prompt_path = Path('config/github_systemmessage.md')
+    prompt = prompt_path.read_text(encoding='utf-8') if prompt_path.exists() else "You are a GitHub assistant."
+    response = github_agent_llm.invoke([SystemMessage(content=prompt)] + list(state["messages"]))
     return {"messages": [response]}
 
-def comms_agent_call(state):
-    system_prompt_content = Path('config/system_prompt_comms_agent.txt').read_text(encoding='utf-8')
-    system_prompt = SystemMessage(content=system_prompt_content)
-    
-    response = comms_agent_llm.invoke([system_prompt] + state["messages"])
-    logger.info(f"Comms agent response: {response.content[:100]}...")
+def comms_agent_call(state: AgentState):
+    prompt_path = Path('config/system_prompt_comms_agent.txt')
+    prompt = prompt_path.read_text(encoding='utf-8') if prompt_path.exists() else "You are a communications assistant."
+    response = comms_agent_llm.invoke([SystemMessage(content=prompt)] + list(state["messages"]))
     return {"messages": [response]}
 
-# Supervisor function
-def supervisor(state):
+# --- SUPERVISOR WITH STRUCTURED OUTPUT ---
+def supervisor(state: AgentState):
     messages = state["messages"]
     last_message = messages[-1]
     
-    # Only route if the last message is from a human (new query)
     if not isinstance(last_message, HumanMessage):
-        return {"next": "__end__", "messages": []}
+        return {"next": "__end__"}
     
-    query = last_message.content
-    
-    # Input sanitization
-    query = re.sub(r'[<>"\\]', '', query)
-    
-    reason = ""
-    # Keyword-based routing
-    if any(word in query.lower() for word in ["github", "repo", "issue", "code"]):
-        next_node = "github_agent"
-        reason = "keyword match"
-    elif any(word in query.lower() for word in ["comms"]):
-        next_node = "comms_agent"
-        reason = "keyword match"
+    # Handle content safely for Pylance (str or list)
+    query_content = last_message.content
+    if isinstance(query_content, list):
+        query = " ".join([str(item.get("text", item)) if isinstance(item, dict) else str(item) for item in query_content])
     else:
-        # LLM-based classification
-        supervisor_prompt_content = Path('config/supervisor_systemmessage.md').read_text(encoding='utf-8')
-        prompt = f"""Classify query: {query}
-Options: github_agent (GitHub), comms_agent (comms), ambiguous (unclear). Respond ONLY with the option name."""
-        response = supervisor_llm.invoke([SystemMessage(content=supervisor_prompt_content), HumanMessage(content=prompt)])
-        next_node = response.content.strip().lower()
-        if next_node not in ["github_agent", "comms_agent", "ambiguous"]:
-            next_node = "ambiguous"  # fallback
-        reason = "LLM classification"
+        query = str(query_content)
     
-    logger.info(f"Routing '{query[:50]}...' to {next_node} (reason: {reason})")
-    return {"next": next_node, "messages": [AIMessage(content=f"Routed to {next_node}")]}
+    # Load supervisor system message
+    sys_path = Path('config/supervisor_systemmessage.md')
+    supervisor_sys = sys_path.read_text(encoding='utf-8') if sys_path.exists() else "Route the query to the correct agent."
+
+    try:
+        # Invoke xAI with structured output requirement
+        response = cast(RouterResponse, structured_supervisor.invoke([
+            SystemMessage(content=supervisor_sys),
+            HumanMessage(content=f"User query: {query}")
+        ]))
+        
+        next_node = response.next_node
+        reason = response.reason
+    except Exception as e:
+        logger.error(f"Supervisor failed: {e}")
+        next_node = "ambiguous"
+        reason = f"Classification error: {str(e)}"
+
+    logger.info(f"Supervisor routing to {next_node} (Reason: {reason})")
+    
+    return {
+        "next": next_node, 
+        "messages": [AIMessage(content=f"Routing decision: {next_node} ({reason})")]
+    }
 
 # Graph construction
 graph = StateGraph(AgentState)
@@ -121,17 +135,24 @@ graph.add_node("comms_agent_tools", comms_agent_tool_exec)
 
 graph.set_entry_point("supervisor")
 
-# Supervisor routing
+# Supervisor routing based on state["next"]
 graph.add_conditional_edges(
     "supervisor",
-    lambda state: state.get("next", "__end__"),
-    {"github_agent": "github_agent", "comms_agent": "comms_agent", "__end__": END}
+    lambda state: state["next"],
+    {
+        "github_agent": "github_agent", 
+        "comms_agent": "comms_agent", 
+        "ambiguous": END,
+        "__end__": END
+    }
 )
 
 # Helper function for agent loops
-def should_continue(state):
+def should_continue(state: AgentState):
     last_msg = state["messages"][-1]
-    return "tools" if last_msg.tool_calls else "supervisor"
+    if isinstance(last_msg, AIMessage) and last_msg.tool_calls:
+        return "tools"
+    return "supervisor"
 
 # Agent loops
 graph.add_conditional_edges("github_agent", should_continue, {"tools": "github_agent_tools", "supervisor": "supervisor"})
@@ -142,5 +163,3 @@ graph.add_edge("comms_agent_tools", "comms_agent")
 
 # Compile the graph
 app = graph.compile(checkpointer=InMemorySaver())
-
-config = {"configurable": {"thread_id": "conversation_1"}}
