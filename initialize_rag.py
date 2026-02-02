@@ -84,8 +84,13 @@ for repo in github_repos:
         )
         docs = loader.load()
         print(f"\t{len(docs)} documents processed")
+        
         for d in docs:
+            # Clean and stringify metadata for Chroma compatibility
+            d.metadata = {k: str(v) if v is not None else 'unknown' for k, v in d.metadata.items()}
+            # Explicitly set the repo name
             d.metadata['repo'] = repo
+            
         documents.extend(docs)
     except Exception as e:
         print(f"Failed to load {repo}: {e}")

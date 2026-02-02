@@ -16,7 +16,7 @@ from langchain_core.messages import BaseMessage, HumanMessage, ToolMessage, Syst
 # Import configuration and tools
 from config.llm_config import embeddings, llm_model
 from backend.tools import (
-    github_agent_tools, comms_agent_full_tools,
+    github_agent_tools, comms_agent_tools,
     github_agent_tool_dict, comms_agent_tool_dict
 )
 
@@ -29,7 +29,7 @@ class RouterResponse(BaseModel):
     next_node: Literal["github_agent", "comms_agent", "ambiguous"] = Field(
         description="The next agent that should handle the query based on the user's intent."
     )
-    reason: str = Field(description="A brief justification for the agent choice.")
+    reason: str = Field(description="A very compact reason.")
 
 # Create the structured model for the supervisor
 # Ensure your xAI model supports .with_structured_output (Grok-beta or later)
@@ -42,7 +42,7 @@ class AgentState(TypedDict):
 
 # Bind LLMs to specific tool sets
 github_agent_llm = llm_model.bind_tools(github_agent_tools)
-comms_agent_llm = llm_model.bind_tools(comms_agent_full_tools)
+comms_agent_llm = llm_model.bind_tools(comms_agent_tools)
 
 def _execute_tools(state: AgentState, tool_dict: dict):
     """Execute tools based on the last message's tool calls."""
@@ -60,6 +60,7 @@ def _execute_tools(state: AgentState, tool_dict: dict):
         if tool:
             try:
                 result = tool.invoke(tool_call)
+                logger.info(f"Execution result: {str(result)[:200]}")
                 tool_results.append(ToolMessage(content=str(result), tool_call_id=tool_call["id"]))
             except Exception as e:
                 logger.error(f"Tool '{tool_name}' failed: {e}")
@@ -84,8 +85,8 @@ def github_agent_call(state: AgentState):
     return {"messages": [response]}
 
 def comms_agent_call(state: AgentState):
-    prompt_path = Path('config/system_prompt_comms_agent.txt')
-    prompt = prompt_path.read_text(encoding='utf-8') if prompt_path.exists() else "You are a communications assistant."
+    prompt_path = Path('config/comms_systemmessage.md')
+    prompt = prompt_path.read_text(encoding='utf-8') if prompt_path.exists() else "You are a PlanetIX communications assistant."
     response = comms_agent_llm.invoke([SystemMessage(content=prompt)] + list(state["messages"]))
     return {"messages": [response]}
 

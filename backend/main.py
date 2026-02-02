@@ -1,3 +1,15 @@
+import os
+os.environ['TQDM_DISABLE'] = '1'  # Disable tqdm progress bars
+
+import logging
+
+# Suppress verbose INFO logs from libraries in terminal output
+logging.getLogger('httpx').setLevel(logging.WARNING)
+logging.getLogger('chromadb').setLevel(logging.WARNING)
+logging.getLogger('chromadb.telemetry.product.posthog').setLevel(logging.WARNING)
+logging.getLogger('transformers').setLevel(logging.WARNING)
+logging.getLogger('sentence_transformers').setLevel(logging.WARNING)
+
 import chainlit as cl
 from agent import app as langgraph_app
 from langchain_core.messages import HumanMessage
@@ -5,7 +17,6 @@ from langchain_core.runnables import RunnableConfig
 import json
 import asyncio
 from datetime import datetime, timezone
-import os
 from typing import cast
 
 log_lock = asyncio.Lock()
@@ -84,7 +95,7 @@ async def main(message: cl.Message):
                 step = tool_steps[run_id]
                 tool_output = event["data"].get("output")
 
-                await log_to_file(f"Tool Response: {tool_output}")
+                await log_to_file(f"Execution result: {tool_output}")
 
                 # Metadata extraction with safe serialization
                 # Use .dict() or string conversion to avoid TypeError

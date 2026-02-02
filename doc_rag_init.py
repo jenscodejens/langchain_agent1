@@ -2,7 +2,6 @@ import json
 import logging
 import re
 import hashlib
-from dateutil import parser as date_parser
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -53,10 +52,11 @@ def indexing_pipeline(url):
             metadata = {
                 "url": url,
                 "title": str(meta_data.title) if meta_data and meta_data.title else "Unknown title",
-                "publish_date": str(meta_data.date) if meta_data and meta_data.date else None
+                "language": "text" # Placeholder to match GitHub metadata structure
             }
             # Filter out None values for Chroma compatibility
-            metadata = {k: v for k, v in metadata.items() if v is not None}
+            # metadata = {k: v for k, v in metadata.items() if v is not None}
+            metadata = {k: str(v) for k, v in metadata.items() if v is not None}
             
             return [Document(page_content=cleaned_text, metadata=metadata)]
         return []
@@ -97,16 +97,6 @@ for url in urls:
     docs = indexing_pipeline(url)
     
     for doc in docs:
-        # If Trafilatura missed the date, run your old regex-fallback here if needed
-        if 'publish_date' not in doc.metadata:
-            date_regex = r'\b(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{4}[/-]\d{1,2}[/-]\d{1,2}|\w+ \d{1,2}, \d{4})\b'
-            match = re.search(date_regex, doc.page_content[:500])
-            if match:
-                try:
-                    doc.metadata['publish_date'] = date_parser.parse(match.group(1)).isoformat()
-                except (ValueError, OverflowError):
-                    pass
-        
         all_documents.append(doc)
 
 # Splitting and Save with Double Check (Upsert logic)
