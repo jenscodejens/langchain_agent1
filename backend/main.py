@@ -1,5 +1,5 @@
 import os
-os.environ['TQDM_DISABLE'] = '1'  # Disable tqdm progress bars
+# os.environ['TQDM_DISABLE'] = '1'  # Disable tqdm progress bars
 
 import logging
 

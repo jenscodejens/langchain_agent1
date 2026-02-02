@@ -166,7 +166,7 @@ cython_debug/
 # Custom
 .kilocode/
 github.db/
-chroma_doc_db/
+planetix_comms.db/
 embedding_model/
 temp_*/
 .files/
@@ -175,3 +175,4 @@ temp_*/
 /free-port.ps1
 logs/
 /README.md
+

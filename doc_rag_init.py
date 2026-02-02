@@ -44,8 +44,14 @@ def indexing_pipeline(url):
         
         # Extract metadata (date, title, etc.) automatically
         meta_data = trafilatura.extract_metadata(downloaded)
-        text = trafilatura.extract(downloaded, include_comments=False)
-        
+        text = trafilatura.extract(
+            downloaded, 
+            include_comments=False,
+            include_tables=True,
+            no_fallback=False,
+            favor_precision=True,
+        )
+
         cleaned_text = clean_text(text)
         if cleaned_text:
             # Build metadata object
@@ -102,7 +108,7 @@ for url in urls:
 # Splitting and Save with Double Check (Upsert logic)
 if all_documents:
     split_docs = splitter.split_documents(all_documents)
-    valid_docs = [d for d in split_docs if len(d.page_content.strip()) > 20]
+    valid_docs = [d for d in split_docs if len(d.page_content.strip()) > 100]
     
     if valid_docs:
         # Create unique IDs based on content and URL to avoid duplicates
