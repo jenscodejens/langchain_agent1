@@ -11,10 +11,11 @@ def list_tracked_repositories(_: str = "") -> str:
             config = json.load(f)
         repos = config.get('github_repos', [])
         if not repos:
-            return "No repositories are currently tracked."
-        result = "Tracked GitHub repositories:\n"
+            return ""
+        result = ""
         for repo in repos:
-            result += f"- **{repo}**: [View on GitHub](https://github.com/{repo})\n"
+            author, repo_name = repo.split('/', 1)
+            result += f"{author} - **{repo_name}**&emsp;[GitHub](https://github.com/{repo})\n"
         return result
     except Exception as e:
         return f"Failed to retrieve repository list: {str(e)}"

@@ -17,10 +17,10 @@ def check_port_usage(port):
             pass
     return None
 
-def build_chainlit_command(port: int, watch: bool = True, debug: bool = False, headless: bool = False):
+def build_chainlit_command(port: int, watch: bool = False, debug: bool = False, headless: bool = False):
     """Build the Chainlit command list with optional flags: -w for watch mode, -d for debug mode, -h for headless mode."""
-    main_file = Path("backend/main.py")
-    
+    main_file = Path("src/app.py")
+
     if not main_file.exists():
         raise FileNotFoundError(f"Source file {main_file} not found.")
 
@@ -47,11 +47,10 @@ def main():
     usage_msg = check_port_usage(port)
     if usage_msg:
         print(f"❌  {usage_msg}.")
-        print(f"    Please configure another port in ./backend/run_chainlit.py")
+        print(f"    Please configure another port in ./src/run_chainlit.py")
         sys.exit(1)
 
-    is_watch_enabled = os.environ.get('ENABLE_WATCH', 'true').lower() == 'true'
-    cmd = build_chainlit_command(port, is_watch_enabled)
+    cmd = build_chainlit_command(port)
     watch_mode = "Enabled" if "-w" in cmd else "Disabled"
     debug_mode = "Enabled" if "-d" in cmd else "Disabled"
     open_in_browser = "Disabled" if "-h" in cmd else "Enabled"
@@ -62,6 +61,7 @@ def main():
     print(f"✅  Starting Chainlit - Watch Mode: [{watch_color}{watch_mode}\033[0m] Debug Mode: [{debug_color}{debug_mode}\033[0m] Open in browser: [{browser_color}{open_in_browser}\033[0m]")
 
     try:
+        os.chdir(Path(__file__).parent.parent)
         subprocess.run(cmd, check=True)
     except subprocess.CalledProcessError as e:
         print(f"❌  Chainlit failed with exit code {e.returncode}")

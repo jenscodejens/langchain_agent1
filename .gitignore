@@ -165,7 +165,8 @@ cython_debug/
 
 # Custom
 .kilocode/
-chroma_db/
+github.db/
+planetix_comms.db/
 embedding_model/
 temp_*/
 .files/
@@ -173,3 +174,5 @@ temp_*/
 /mcp_server.py
 /free-port.ps1
 logs/
+/README.md
+
