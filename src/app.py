@@ -11,7 +11,7 @@ logging.getLogger('transformers').setLevel(logging.WARNING)
 logging.getLogger('sentence_transformers').setLevel(logging.WARNING)
 
 import chainlit as cl
-from agent import app as langgraph_app
+from .agent import app as langgraph_app
 from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
 import json

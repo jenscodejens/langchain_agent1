@@ -15,7 +15,7 @@ from langchain_core.messages import BaseMessage, HumanMessage, ToolMessage, Syst
 
 # Import configuration and tools
 from config.llm_config import embeddings, llm_model
-from backend.tools import (
+from .tools import (
     github_agent_tools, comms_agent_tools,
     github_agent_tool_dict, comms_agent_tool_dict
 )

@@ -1,5 +1,5 @@
 from langchain.tools import tool
-from backend.retrievers import get_hybrid_retriever
+from ..retrievers import get_hybrid_retriever
 import json
 
 @tool("retrieve_github_info", description="Retrieve technical information from GitHub repositories. Best for code, architecture, and file-specific questions. Automatically handles hyphen-matching for repo names.")

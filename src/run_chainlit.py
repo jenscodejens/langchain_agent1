@@ -19,8 +19,8 @@ def check_port_usage(port):
 
 def build_chainlit_command(port: int, watch: bool = False, debug: bool = False, headless: bool = False):
     """Build the Chainlit command list with optional flags: -w for watch mode, -d for debug mode, -h for headless mode."""
-    main_file = Path("backend/main.py")
-    
+    main_file = Path("src/app.py")
+
     if not main_file.exists():
         raise FileNotFoundError(f"Source file {main_file} not found.")
 
@@ -47,7 +47,7 @@ def main():
     usage_msg = check_port_usage(port)
     if usage_msg:
         print(f"❌  {usage_msg}.")
-        print(f"    Please configure another port in ./backend/run_chainlit.py")
+        print(f"    Please configure another port in ./src/run_chainlit.py")
         sys.exit(1)
 
     cmd = build_chainlit_command(port)

@@ -8,7 +8,7 @@ import os
 from huggingface_hub import snapshot_download
 
 # Set the cache directory to match llm_config.py
-project_root = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 embedding_dir = os.path.join(project_root, 'embedding_model')
 os.environ['HF_HOME'] = embedding_dir
 
