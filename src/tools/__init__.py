@@ -4,6 +4,7 @@ from .list_tracked_repositories import list_tracked_repositories
 # from .duckduckgo_web_search import duckduckgo_web_search
 from .read_github_file import read_github_file
 from .retrieve_comms_info import retrieve_comms_info
+from .retrieve_slack_history import retrieve_slack_history
 
 """
 Available tools:
@@ -23,7 +24,7 @@ tool_dict = {tool.name: tool for tool in all_tools}
 # Tool groupings for multi-agent system
 shared_tools = [current_datetime]
 github_tools = [retrieve_github_info, list_tracked_repositories, read_github_file]
-comms_tools = [retrieve_comms_info] 
+comms_tools = [retrieve_comms_info, retrieve_slack_history] 
 
 github_agent_tools = shared_tools + github_tools
 comms_agent_tools = shared_tools + comms_tools
