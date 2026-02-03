@@ -61,6 +61,7 @@ def main():
     print(f"✅  Starting Chainlit - Watch Mode: [{watch_color}{watch_mode}\033[0m] Debug Mode: [{debug_color}{debug_mode}\033[0m] Open in browser: [{browser_color}{open_in_browser}\033[0m]")
 
     try:
+        os.chdir(Path(__file__).parent.parent)
         subprocess.run(cmd, check=True)
     except subprocess.CalledProcessError as e:
         print(f"❌  Chainlit failed with exit code {e.returncode}")

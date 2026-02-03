@@ -1,4 +1,6 @@
 import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 # os.environ['TQDM_DISABLE'] = '1'  # Disable tqdm progress bars
 
 import logging
@@ -11,7 +13,7 @@ logging.getLogger('transformers').setLevel(logging.WARNING)
 logging.getLogger('sentence_transformers').setLevel(logging.WARNING)
 
 import chainlit as cl
-from .agent import app as langgraph_app
+from agent import app as langgraph_app
 from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
 import json

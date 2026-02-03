@@ -1,5 +1,5 @@
 from langchain.tools import tool
-from ..retrievers import get_hybrid_retriever
+from src.retrievers import get_hybrid_retriever
 
 @tool("retrieve_comms_info", description="Retrieve information from PlanetIX announcements and AIXT news. Use this for project updates, news, or general community information.")
 def retrieve_comms_info(query: str) -> str:

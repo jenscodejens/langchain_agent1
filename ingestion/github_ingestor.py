@@ -2,6 +2,7 @@ import os
 import json
 import shutil
 import stat
+import hashlib
 from pathlib import Path
 from langchain_community.document_loaders import GitLoader
 from langchain_core.documents import Document
@@ -52,13 +53,24 @@ class GitHubIngestor(BaseIngestor):
             config = json.load(f)
         self.github_repos = config['github_repos']
 
+    def generate_ids(self, documents: list[Document]) -> list[str]:
+        """Generate unique IDs for documents, including repo for uniqueness."""
+        ids = []
+        for doc in documents:
+            repo = doc.metadata.get('repo', '')
+            source = doc.metadata.get('source', '')
+            content_start = doc.page_content[:50]
+            identifier = f"{repo}_{source}_{content_start}"
+            ids.append(hashlib.md5(identifier.encode()).hexdigest())
+        return ids
+
     def load_documents(self) -> list[Document]:
         """Load documents from GitHub repositories."""
         documents = []
         temp_dirs = []
 
         for repo in self.github_repos:
-            logger.info(f"Processing repository: {repo}")
+            print(f"Processing repository: {repo}")
             safe_repo_name = repo.replace('/', '_').replace('\\', '_')
             temp_dir = f"./temp_{safe_repo_name}"
             temp_dirs.append(temp_dir)
@@ -71,7 +83,7 @@ class GitHubIngestor(BaseIngestor):
                     file_filter=advanced_file_filter
                 )
                 docs = loader.load()
-                logger.info(f"\t{len(docs)} documents processed")
+                print(f"\t{len(docs)} documents processed")
 
                 for d in docs:
                     # Clean and stringify metadata for Chroma compatibility
@@ -81,7 +93,7 @@ class GitHubIngestor(BaseIngestor):
 
                 documents.extend(docs)
             except Exception as e:
-                logger.error(f"Failed to load {repo}: {e}")
+                print(f"Failed to load {repo}: {e}")
 
         # Cleanup temp directories
         for temp_dir in temp_dirs:
@@ -95,14 +107,14 @@ class GitHubIngestor(BaseIngestor):
 
     def run_ingestion(self):
         """Override to add progress bar and check if DB exists."""
-        if os.path.exists(self.persist_directory):
-            logger.info(f"{self.persist_directory} already exists, skipping initialization")
-            return
+        # if os.path.exists(self.persist_directory):
+        #     print(f"{self.persist_directory} already exists, skipping initialization")
+        #     return
 
-        logger.info(f"Starting GitHub ingestion for {len(self.github_repos)} repositories")
+        print(f"Starting GitHub ingestion for {len(self.github_repos)} repositories")
         documents = self.load_documents()
         if not documents:
-            logger.warning("No documents loaded.")
+            print("No documents loaded.")
             return
 
         split_docs = self.split_documents(documents)
