@@ -1,0 +1,6 @@
+{
+  "_comment": "Temporary way of adding with Comms url's for hroma_doc_db",
+  "comms_docs": [
+    "https://comms.planetix.com/AIXT"
+  ]
+}
