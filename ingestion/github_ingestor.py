@@ -3,6 +3,8 @@ import json
 import shutil
 import stat
 import hashlib
+import requests
+import time
 from pathlib import Path
 from langchain_community.document_loaders import GitLoader
 from langchain_core.documents import Document
@@ -52,6 +54,7 @@ class GitHubIngestor(BaseIngestor):
         with open(config_path, 'r') as f:
             config = json.load(f)
         self.github_repos = config['github_repos']
+        self.temp_dirs = []
 
     def generate_ids(self, documents: list[Document]) -> list[str]:
         """Generate unique IDs for documents, including repo for uniqueness."""
@@ -67,22 +70,50 @@ class GitHubIngestor(BaseIngestor):
     def load_documents(self) -> list[Document]:
         """Load documents from GitHub repositories."""
         documents = []
-        temp_dirs = []
 
         for repo in self.github_repos:
             print(f"Processing repository: {repo}")
             safe_repo_name = repo.replace('/', '_').replace('\\', '_')
-            temp_dir = f"./temp_{safe_repo_name}"
-            temp_dirs.append(temp_dir)
+            temp_dir = os.path.abspath(f"./temp_{safe_repo_name}")
+            self.temp_dirs.append(temp_dir)
 
             try:
+                # Get the default branch from GitHub API
+                api_url = f"https://api.github.com/repos/{repo}"
+                response = requests.get(api_url)
+                response.raise_for_status()
+                repo_data = response.json()
+                default_branch = repo_data['default_branch']
+                print(f"\tDefault branch: {default_branch}, Size: {repo_data.get('size', 'unknown')} KB")
+
                 loader = GitLoader(
                     repo_path=temp_dir,
                     clone_url=f"https://github.com/{repo}.git",
-                    branch="main",
+                    branch=default_branch,
                     file_filter=advanced_file_filter
                 )
                 docs = loader.load()
+
+                # Count total files in repo and list some
+                matching_files = []
+                for root, dirs, files in os.walk(temp_dir):
+                    if not any(ignored in root for ignored in ['.git', 'node_modules', '__pycache__', 'dist', 'build', 'venv', '.env']):
+                        for f in files:
+                            full_path = os.path.join(root, f)
+                            if advanced_file_filter(full_path):
+                                matching_files.append(full_path)
+                total_files = len(matching_files)
+                print(f"\tTotal filter-matching files: {total_files}, Documents loaded: {len(docs)}")
+                if total_files > 0 and len(docs) == 0:
+                    print(f"\tSample matching files: {matching_files[:5]}")  # Show first 5
+                    # Try to read a sample file
+                    try:
+                        with open(matching_files[0], 'r', encoding='utf-8') as f:
+                            content = f.read()
+                            print(f"\tSample file '{os.path.basename(matching_files[0])}' content length: {len(content)}")
+                    except Exception as e:
+                        print(f"\tError reading sample file: {e}")
+
                 print(f"\t{len(docs)} documents processed")
 
                 for d in docs:
@@ -94,14 +125,6 @@ class GitHubIngestor(BaseIngestor):
                 documents.extend(docs)
             except Exception as e:
                 print(f"Failed to load {repo}: {e}")
-
-        # Cleanup temp directories
-        for temp_dir in temp_dirs:
-            if os.path.exists(temp_dir):
-                try:
-                    shutil.rmtree(temp_dir, onexc=remove_readonly)
-                except Exception as e:
-                    logger.warning(f"Could not remove {temp_dir}: {e}")
 
         return documents
 
@@ -125,12 +148,30 @@ class GitHubIngestor(BaseIngestor):
             total_docs = len(valid_docs)
             batch_size = 100
 
-            for i in range(0, total_docs, batch_size):
-                batch = valid_docs[i:i+batch_size]
-                self.save_to_vectorstore(batch, ids[i:i+batch_size])
-                progress_bar(i + len(batch), total_docs)
+            try:
+                for i in range(0, total_docs, batch_size):
+                    batch = valid_docs[i:i+batch_size]
+                    self.save_to_vectorstore(batch, ids[i:i+batch_size])
+                    progress_bar(i + len(batch), total_docs)
+            except KeyboardInterrupt:
+                print("\nIngestion interrupted by user. Partial progress saved.")
+                return
 
             print("\r" + " " * 120 + "\r", end="")
             logger.info(f"GitHub ingestion complete: {total_docs} chunks in {self.persist_directory}")
         else:
             logger.warning("No valid documents to save.")
+
+        # Cleanup temp directories after all processing
+        for temp_dir in self.temp_dirs:
+            if os.path.exists(temp_dir):
+                for attempt in range(3):
+                    try:
+                        time.sleep(2 * (attempt + 1))  # Increasing delay: 2s, 4s, 6s
+                        shutil.rmtree(temp_dir, onexc=remove_readonly)
+                        break  # Success, exit retry loop
+                    except Exception as e:
+                        if attempt == 2:  # Last attempt
+                            print(f"Could not remove {temp_dir} after 3 attempts: {e}")
+                        else:
+                            print(f"Attempt {attempt + 1} failed for {temp_dir}, retrying...")

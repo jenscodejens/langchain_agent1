@@ -1,4 +1,12 @@
 import os
+import logging
+
+# --- LOGGING SUPPRESSION ---
+logging.getLogger('httpx').setLevel(logging.WARNING)
+logging.getLogger('chromadb').setLevel(logging.WARNING)
+logging.getLogger('chromadb.telemetry.product.posthog').setLevel(logging.WARNING)
+logging.getLogger('transformers').setLevel(logging.WARNING)
+logging.getLogger('sentence_transformers').setLevel(logging.WARNING)
 
 # Set HuggingFace cache to project root
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
