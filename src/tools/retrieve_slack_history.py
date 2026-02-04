@@ -22,7 +22,7 @@ def retrieve_slack_history(limit: int = 20) -> str:
             
         # Format the messages into a readable string for the Agent
         formatted_history = []
-        for msg in reversed(messages): # Get them in chronological order
+        for msg in reversed(messages):
             user = msg.get("user", "Unknown User")
             text = msg.get("text", "")
             ts = msg.get("ts", "")

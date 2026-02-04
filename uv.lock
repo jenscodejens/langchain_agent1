@@ -239,6 +239,15 @@ wheels = [
 ]
 
 [[package]]
+name = "blinker"
+version = "1.9.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/21/28/9b3f50ce0e048515135495f198351908d99540d69bfdc8c1d15b73dc55ce/blinker-1.9.0.tar.gz", hash = "sha256:b4ce2265a7abece45e7cc896e98dbebe6cead56bcf805a3d23136d145f5445bf", size = 22460, upload-time = "2024-11-08T17:25:47.436Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/10/cb/f2ad4230dc2eb1a74edf38f1a38b9b52277f75bef262d8908e60d957e13c/blinker-1.9.0-py3-none-any.whl", hash = "sha256:ba0efaa9080b619ff2f3459d1d500c57bddea4a6b424b60a91141db6fd2f08bc", size = 8458, upload-time = "2024-11-08T17:25:46.184Z" },
+]
+
+[[package]]
 name = "brotli"
 version = "1.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -819,6 +828,23 @@ wheels = [
 ]
 
 [[package]]
+name = "flask"
+version = "3.1.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "blinker" },
+    { name = "click" },
+    { name = "itsdangerous" },
+    { name = "jinja2" },
+    { name = "markupsafe" },
+    { name = "werkzeug" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/dc/6d/cfe3c0fcc5e477df242b98bfe186a4c34357b4847e87ecaef04507332dab/flask-3.1.2.tar.gz", hash = "sha256:bf656c15c80190ed628ad08cdfd3aaa35beb087855e2f494910aa3774cc4fd87", size = 720160, upload-time = "2025-08-19T21:03:21.205Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ec/f9/7f9263c5695f4bd0023734af91bedb2ff8209e8de6ead162f35d8dc762fd/flask-3.1.2-py3-none-any.whl", hash = "sha256:ca1d8112ec8a6158cc29ea4858963350011b5c846a414cdb7a954aa9e967d03c", size = 103308, upload-time = "2025-08-19T21:03:19.499Z" },
+]
+
+[[package]]
 name = "flatbuffers"
 version = "25.12.19"
 source = { registry = "https://pypi.org/simple" }
@@ -1138,6 +1164,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/e1/7e/691d061b7329bc8d54edbf0ec22fbfb2afe61facb681f9aaa9bff7a27d04/inflection-0.5.1.tar.gz", hash = "sha256:1a29730d366e996aaacffb2f1f1cb9593dc38e2ddd30c91250c6dde09ea9b417", size = 15091, upload-time = "2020-08-22T08:16:29.139Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/59/91/aa6bde563e0085a02a435aa99b49ef75b0a4b062635e606dab23ce18d720/inflection-0.5.1-py2.py3-none-any.whl", hash = "sha256:f38b2b640938a4f35ade69ac3d053042959b62a0f1076a5bbaa1b9526605a8a2", size = 9454, upload-time = "2020-08-22T08:16:27.816Z" },
+]
+
+[[package]]
+name = "itsdangerous"
+version = "2.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/9c/cb/8ac0172223afbccb63986cc25049b154ecfb5e85932587206f42317be31d/itsdangerous-2.2.0.tar.gz", hash = "sha256:e0050c0b7da1eea53ffaf149c0cfbb5c6e2e2b69c4bef22c81fa6eb73e5f6173", size = 54410, upload-time = "2024-04-16T21:28:15.614Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/04/96/92447566d16df59b2a776c0fb82dbc4d9e07cd95062562af01e408583fc4/itsdangerous-2.2.0-py3-none-any.whl", hash = "sha256:c6242fc49e35958c8b15141343aa660db5fc54d4f13a1db01a3f5891b98700ef", size = 16234, upload-time = "2024-04-16T21:28:14.499Z" },
 ]
 
 [[package]]
@@ -1795,6 +1830,24 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/6a/51/63fe664f3908c97be9d2e4f1158eb633317598cfa6e1fc14af5383f17512/networkx-3.6.1.tar.gz", hash = "sha256:26b7c357accc0c8cde558ad486283728b65b6a95d85ee1cd66bafab4c8168509", size = 2517025, upload-time = "2025-12-08T17:02:39.908Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl", hash = "sha256:d47fbf302e7d9cbbb9e2555a0d267983d2aa476bac30e90dfbe5669bd57f3762", size = 2068504, upload-time = "2025-12-08T17:02:38.159Z" },
+]
+
+[[package]]
+name = "ngrok"
+version = "1.7.0"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/df/cf/baca26017f87084e25aab31117fa5feca198b4fd7a61406ae5add6f733c7/ngrok-1.7.0-cp310-abi3-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:97ed4d29ed65f00acaeaa958324aeec32f2f3b07042090fe91d30b47429b7994", size = 7158247, upload-time = "2025-12-16T21:59:21.257Z" },
+    { url = "https://files.pythonhosted.org/packages/62/b5/f21e7843c4b19e841d22b8967d4fa953a8b1fe8966c1e52fc5dfe3e2eef6/ngrok-1.7.0-cp310-abi3-macosx_10_12_x86_64.whl", hash = "sha256:b96b5efc8d6bb0f5551005e4d813a05fa7ccae057c30719934d6f6d7ae6858c6", size = 3717318, upload-time = "2025-12-16T21:59:05.788Z" },
+    { url = "https://files.pythonhosted.org/packages/d2/73/1c5e716c1901a5d26f27b94f7b2b48ded4f492c766b1c5bb28f763bcc6a6/ngrok-1.7.0-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:8b95a3e1ca6f8120395a118ae85ad940197b4565c530f1941678770e3be63bde", size = 3458413, upload-time = "2025-12-16T21:58:29.825Z" },
+    { url = "https://files.pythonhosted.org/packages/4b/af/d4e8a8395d7e30ca0f612358d847cc464a93061514cecab7ecbc2d815123/ngrok-1.7.0-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a0c63849756558cf79186cc75b4b58175cbc907d14a5d907175627c5ce6201db", size = 5507673, upload-time = "2025-12-16T21:59:51.416Z" },
+    { url = "https://files.pythonhosted.org/packages/f8/68/21b935ca9e5d3bc23f3c732f54c7b472b67325c5433b7311a52f15f03b70/ngrok-1.7.0-cp310-abi3-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:69a483a27945ff95a5976cfa317ca504ec121c07d147f2dc98ffe15b36ff7e51", size = 4448911, upload-time = "2025-12-16T22:00:28.291Z" },
+    { url = "https://files.pythonhosted.org/packages/a0/d3/f6fb8279a7f7ef78c9cfa4edc25d95771194311e23f9bb38a986c257069e/ngrok-1.7.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0f3793cec6e52d8aff427fc1ddbf914c3b51f0e28240187bdaf27fd0ba8521f0", size = 3760573, upload-time = "2025-12-16T22:00:26.896Z" },
+    { url = "https://files.pythonhosted.org/packages/a5/98/6f2a631e816ef81133d207453928e0029ec6c5db071de9e62fe6a7880f32/ngrok-1.7.0-cp310-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:4b1acf42cf7489b2356c4d8d5075d3f5d989a4972037bb717ffe7308bb9bcac8", size = 3560031, upload-time = "2025-12-16T22:02:59.164Z" },
+    { url = "https://files.pythonhosted.org/packages/7d/db/f02a76bf4033a5af0b7ea24e7317c1a2807c09c549e154eb3d945b8c8077/ngrok-1.7.0-cp310-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:567acd8edcb89fb3f4f387d347b4ddb0f9245348aecd5b490dfbd6e2e192dbd8", size = 3847556, upload-time = "2025-12-16T22:04:13.421Z" },
+    { url = "https://files.pythonhosted.org/packages/02/17/01f76eaa4dda96014160d79049f10c19b6ad273184a3bb570082414b51dc/ngrok-1.7.0-cp310-abi3-win32.whl", hash = "sha256:7927b73aaf04d33fdc0a17e6a354854c8aab08afa92a1e0840946f4969aeeae1", size = 3205609, upload-time = "2025-12-16T22:01:37.083Z" },
+    { url = "https://files.pythonhosted.org/packages/88/f0/367170996e75a251eae2e48b9c7090884420a8a9368a0ec7aea10b061375/ngrok-1.7.0-cp310-abi3-win_amd64.whl", hash = "sha256:270c3f1638408cf75ac6ac88b4afb2676a2b97a191c5d9cff7ccaa5c7819469a", size = 3784379, upload-time = "2025-12-16T21:59:28.704Z" },
+    { url = "https://files.pythonhosted.org/packages/a1/31/be1ee0d10732a08fc11cb7838825f004bae4ce04668f9dcee7a6ff165f2a/ngrok-1.7.0-cp310-abi3-win_arm64.whl", hash = "sha256:cfa809dff993c5feecafe5899010c1b85c27e242d051246a3872bdb2d7ca3bec", size = 3470632, upload-time = "2025-12-16T21:59:31.598Z" },
 ]
 
 [[package]]
@@ -3549,6 +3602,18 @@ wheels = [
 ]
 
 [[package]]
+name = "slack-bolt"
+version = "1.27.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "slack-sdk" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4c/28/50ed0b86e48b48e6ddcc71de93b91c8ac14a55d1249e4bff0586494a2f90/slack_bolt-1.27.0.tar.gz", hash = "sha256:3db91d64e277e176a565c574ae82748aa8554f19e41a4fceadca4d65374ce1e0", size = 129101, upload-time = "2025-11-13T20:17:46.878Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/01/a8/1acb355759747ba4da5f45c1a33d641994b9e04b914908c9434f18bd97e8/slack_bolt-1.27.0-py2.py3-none-any.whl", hash = "sha256:c43c94bf34740f2adeb9b55566c83f1e73fed6ba2878bd346cdfd6fd8ad22360", size = 230428, upload-time = "2025-11-13T20:17:45.465Z" },
+]
+
+[[package]]
 name = "slack-sdk"
 version = "3.39.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3567,6 +3632,7 @@ dependencies = [
     { name = "colorama" },
     { name = "ddgs" },
     { name = "fastmcp" },
+    { name = "flask" },
     { name = "gitpython" },
     { name = "httpx" },
     { name = "langchain" },
@@ -3577,11 +3643,13 @@ dependencies = [
     { name = "langchain-text-splitters" },
     { name = "langchain-xai" },
     { name = "langgraph" },
+    { name = "ngrok" },
     { name = "psutil" },
     { name = "pydantic" },
     { name = "python-dotenv" },
     { name = "rank-bm25" },
     { name = "sentence-transformers" },
+    { name = "slack-bolt" },
     { name = "slack-sdk" },
     { name = "torch" },
     { name = "trafilatura" },
@@ -3600,6 +3668,7 @@ requires-dist = [
     { name = "colorama", specifier = ">=0.4.6" },
     { name = "ddgs", specifier = ">=9.10.0" },
     { name = "fastmcp", specifier = ">=0.9.0" },
+    { name = "flask", specifier = ">=3.1.2" },
     { name = "gitpython", specifier = ">=3.1.46" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "langchain", specifier = ">=0.3.0,<0.4.0" },
@@ -3610,11 +3679,13 @@ requires-dist = [
     { name = "langchain-text-splitters", specifier = ">=0.3.0,<0.4.0" },
     { name = "langchain-xai", specifier = ">=0.1.0,<0.2.0" },
     { name = "langgraph", specifier = "==0.2.66" },
+    { name = "ngrok", specifier = ">=1.7.0" },
     { name = "psutil", specifier = ">=7.2.1" },
     { name = "pydantic", specifier = ">=2.12.5" },
     { name = "python-dotenv", specifier = ">=1.2.1" },
     { name = "rank-bm25", specifier = ">=0.2.2" },
     { name = "sentence-transformers", specifier = ">=5.2.0" },
+    { name = "slack-bolt", specifier = ">=1.27.0" },
     { name = "slack-sdk", specifier = ">=3.39.0" },
     { name = "torch", specifier = ">=2.9.1" },
     { name = "trafilatura", specifier = ">=1.0.0" },
@@ -4182,6 +4253,18 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/91/d6/7d4553ad4bf1c0421e1ebd4b18de5d9098383b5caa1d937b63df8d04b565/websockets-16.0-cp312-cp312-win32.whl", hash = "sha256:eaded469f5e5b7294e2bdca0ab06becb6756ea86894a47806456089298813c89", size = 178261, upload-time = "2026-01-10T09:22:56.251Z" },
     { url = "https://files.pythonhosted.org/packages/c3/f0/f3a17365441ed1c27f850a80b2bc680a0fa9505d733fe152fdf5e98c1c0b/websockets-16.0-cp312-cp312-win_amd64.whl", hash = "sha256:5569417dc80977fc8c2d43a86f78e0a5a22fee17565d78621b6bb264a115d4ea", size = 178693, upload-time = "2026-01-10T09:22:57.478Z" },
     { url = "https://files.pythonhosted.org/packages/6f/28/258ebab549c2bf3e64d2b0217b973467394a9cea8c42f70418ca2c5d0d2e/websockets-16.0-py3-none-any.whl", hash = "sha256:1637db62fad1dc833276dded54215f2c7fa46912301a24bd94d45d46a011ceec", size = 171598, upload-time = "2026-01-10T09:23:45.395Z" },
+]
+
+[[package]]
+name = "werkzeug"
+version = "3.1.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "markupsafe" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5a/70/1469ef1d3542ae7c2c7b72bd5e3a4e6ee69d7978fa8a3af05a38eca5becf/werkzeug-3.1.5.tar.gz", hash = "sha256:6a548b0e88955dd07ccb25539d7d0cc97417ee9e179677d22c7041c8f078ce67", size = 864754, upload-time = "2026-01-08T17:49:23.247Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ad/e4/8d97cca767bcc1be76d16fb76951608305561c6e056811587f36cb1316a8/werkzeug-3.1.5-py3-none-any.whl", hash = "sha256:5111e36e91086ece91f93268bb39b4a35c1e6f1feac762c9c822ded0a4e322dc", size = 225025, upload-time = "2026-01-08T17:49:21.859Z" },
 ]
 
 [[package]]
