@@ -62,8 +62,8 @@ class GitHubIngestor(BaseIngestor):
         for doc in documents:
             repo = doc.metadata.get('repo', '')
             source = doc.metadata.get('source', '')
-            content_start = doc.page_content[:50]
-            identifier = f"{repo}_{source}_{content_start}"
+            content_hash = hashlib.md5(doc.page_content.encode()).hexdigest()
+            identifier = f"{repo}_{source}_{content_hash}"
             ids.append(hashlib.md5(identifier.encode()).hexdigest())
         return ids
 
