@@ -68,7 +68,7 @@ class BaseIngestor(ABC):
                     chunk_size=1500,
                     chunk_overlap=150,
                 )
-            else:
+            else: # Default language is set to None
                 splitter = RecursiveCharacterTextSplitter(
                     chunk_size=1500,
                     chunk_overlap=150,
@@ -89,7 +89,9 @@ class BaseIngestor(ABC):
         """Generate unique IDs for documents."""
         ids = []
         for doc in documents:
+            # Create a unique identifier by combining the document's URL and the first 50 characters of its content
             identifier = f"{doc.metadata.get('url', '')}_{doc.page_content[:50]}"
+            # Generate an MD5 hash of the identifier to create a fixed-length, unique ID
             ids.append(hashlib.md5(identifier.encode()).hexdigest())
         return ids
 

@@ -3,8 +3,10 @@ from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 from langchain.tools import tool
 from dotenv import load_dotenv
+import logging
 
 load_dotenv()
+logging.basicConfig(level=logging.DEBUG)
 
 @tool("retrieve_slack_history", description="Fetches the latest messages from a specific Slack channel. Use this to summarize recent discussions, check for community questions, or stay updated on Slack activity.")
 def retrieve_slack_history(limit: int = 20) -> str:

@@ -8,6 +8,7 @@ import time
 from pathlib import Path
 from langchain_community.document_loaders import GitLoader
 from langchain_core.documents import Document
+from langchain_text_splitters import RecursiveCharacterTextSplitter, Language
 from .base_ingestor import BaseIngestor
 from util.progress import progress_bar
 import logging
@@ -60,12 +61,66 @@ class GitHubIngestor(BaseIngestor):
         """Generate unique IDs for documents, including repo for uniqueness."""
         ids = []
         for doc in documents:
+            # Extract repo and source from metadata for uniqueness across repositories
             repo = doc.metadata.get('repo', '')
             source = doc.metadata.get('source', '')
+            # Create a hash of the full document content to detect changes
             content_hash = hashlib.md5(doc.page_content.encode()).hexdigest()
+            # Combine repo, source, and content hash into a unique identifier
             identifier = f"{repo}_{source}_{content_hash}"
+            # Generate an MD5 hash of the identifier for a consistent ID
             ids.append(hashlib.md5(identifier.encode()).hexdigest())
         return ids
+
+    def split_documents(self, documents: list[Document]) -> list[Document]:
+        """Split documents using language-aware splitting with custom chunk size and overlap."""
+        split_docs = []
+        ext_to_language = {
+            ".py": Language.PYTHON,
+            ".pyi": Language.PYTHON,
+            ".js": Language.JS,
+            ".jsx": Language.JS,
+            ".ts": Language.TS,
+            ".tsx": Language.TS,
+            ".java": Language.JAVA,
+            ".kt": Language.KOTLIN,
+            ".rs": Language.RUST,
+            ".go": Language.GO,
+            ".c": Language.C,
+            ".cpp": Language.CPP,
+            ".h": Language.CPP,
+            ".hpp": Language.CPP,
+            ".cs": Language.CSHARP,
+            ".swift": Language.SWIFT,
+            ".php": Language.PHP,
+            ".rb": Language.RUBY,
+            ".md": Language.MARKDOWN,
+            ".markdown": Language.MARKDOWN,
+            ".html": Language.HTML,
+        }
+
+        for doc in documents:
+            source_path = doc.metadata.get("source", "")
+            _, ext = os.path.splitext(source_path)
+            ext = ext.lower()
+
+            # Override default. Major tweak tool
+            language = ext_to_language.get(ext)
+            if language:
+                splitter = RecursiveCharacterTextSplitter.from_language(
+                    language=language,
+                    chunk_size=800,
+                    chunk_overlap=100,
+                )
+            else:
+                splitter = RecursiveCharacterTextSplitter(
+                    chunk_size=800,
+                    chunk_overlap=100,
+                )
+            chunks = splitter.split_documents([doc])
+            split_docs.extend(chunks)
+
+        return split_docs
 
     def load_documents(self) -> list[Document]:
         """Load documents from GitHub repositories."""

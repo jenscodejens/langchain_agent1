@@ -1,6 +1,7 @@
 import os
 import sys
 import logging
+logging.getLogger("httpx").setLevel(logging.WARNING)
 import json
 import asyncio
 from datetime import datetime, timezone

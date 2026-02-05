@@ -22,9 +22,11 @@ Staked IXT	Staked AIX	Staked IXT can be migrated to Staked AIX on Base.
 All migrations of Tokens and NFTs are permanent and irreversible. We are fully committing to Base as our new home.
 
 
-### II. New Base Staking & Rewards
+### II. Phase Two: New Base Staking & Rewards
 Immediately following the migration, a new suite of staking opportunities will go live on Base.
+
 ## New Staking Pools Going Live on Base:
+
 - Single Staking: 3-month, 6-month, and 12-month
 - MetaCrystals Staking.
 - Liquidity Pools: USDC-AIX and ETH-AIX.
@@ -40,7 +42,7 @@ All existing staking on Polygon, including MILK Staking, will be paused until th
 Accrued rewards for staking IXT will be instantly claimable on Base as AIX. If you have accrued 1,000 IXT in rewards on Polygon, you will be able to claim 1,000 AIX immediately on Base.
 
 
-### III. Game Loop Changes & Future Stages
+### III. Phase Three: Game Loop Changes & Future Stages
 The migration alters several existing game mechanics to align with the new ecosystem.
 ## Mining Pass Staking
 Mining Passes on Base has a 3-month locking period. Mining Pass staking on Polygon will close. 
@@ -51,14 +53,14 @@ Mining Passes on Base has a 3-month locking period. Mining Pass staking on Polyg
 Drone Fleets will not be included in this first stage of migration. More information on their transition will be shared at a later date.
 
 
-### IV. Gas Fees & Paymaster Service
+### IV. Phase Four: Gas Fees & Paymaster Service
 To ensure a smooth transition, we are simplifying the initial user experience:
 - Migration Gas Fees: Players must pay the gas fees on Polygon to initiate the migration of their assets.
 - Base Launch: We will utilize the Base Paymaster service to ensure players do not have to worry about gas fees on Base for the migration process itself.
 - Post-Migration Gas: After the initial migration, players will need to pay their own gas fees on Base, similar to how gas fees are paid for POL on Polygon.
 
 
-### V. Token Conversion & Decay Window
+### V. Phase Five: Token Conversion & Decay Window
 To incentivize and reward the timely migration of IXT, a conversion decay window will be enforced for IXT tokens.
 ## 1:1 Conversion Window
 Players will have 1 month from December 1st to migrate their IXT at the full 1:1 conversion rate to AIX.
