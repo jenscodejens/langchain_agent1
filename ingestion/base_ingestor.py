@@ -2,6 +2,7 @@ import os
 from abc import ABC, abstractmethod
 from typing import Optional
 from langchain_chroma import Chroma
+from chromadb.config import Settings
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter, Language
 from langchain_core.documents import Document
@@ -21,7 +22,8 @@ class BaseIngestor(ABC):
         self.vectorstore = Chroma(
             embedding_function=self.embeddings,
             persist_directory=persist_directory,
-            collection_name=collection_name
+            collection_name=collection_name,
+            client_settings=Settings(anonymized_telemetry=False)
         )
 
     @abstractmethod

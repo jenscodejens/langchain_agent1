@@ -17,7 +17,7 @@ def check_port_usage(port):
             pass
     return None
 
-def build_chainlit_command(port: int, watch: bool = True, debug: bool = False, headless: bool = False):
+def build_chainlit_command(port: int, watch: bool = False, debug: bool = False, headless: bool = False):
     """Build the Chainlit command list with optional flags: -w for watch mode, -d for debug mode, -h for headless mode."""
     main_file = Path("src/app.py")
 

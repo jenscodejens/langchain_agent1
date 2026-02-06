@@ -10,7 +10,7 @@ def read_github_file(repo_name: str, file_path: str) -> str:
     """Fetch full file content directly from GitHub's Raw API for the 'main' branch."""
     
     # Construction of the direct Raw URL
-    raw_url = f"https://raw.githubusercontent.com{repo_name}/main/{file_path}"
+    raw_url = f"https://raw.githubusercontent.com/{repo_name}/main/{file_path}"
     
     # Retrieve GITHUB_TOKEN for private repository access
     token = os.getenv("GITHUB_TOKEN")
