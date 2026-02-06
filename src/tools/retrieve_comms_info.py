@@ -10,7 +10,7 @@ def retrieve_comms_info(query: str) -> str:
             persist_dir="./planetix_comms.db", 
             collection_name="comms_docs", 
             repo_filter=None, # No repo filter needed for web docs
-            top_n=3          # More precise focus for text news
+            top_n=3           # More precise focus for texts
         )
         
         docs = retriever.invoke(query)

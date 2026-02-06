@@ -10,7 +10,7 @@ elif torch.cuda.is_available():
 else:
     device = "cpu"
 
-print(f"Använder device: {device}")
+print(f"Using device: {device}")
 
 model_name = "BAAI/bge-m3"
 model_kwargs = {

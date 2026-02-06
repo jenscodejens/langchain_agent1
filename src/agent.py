@@ -2,19 +2,18 @@ from pydantic import BaseModel, Field
 from typing import Literal, Annotated, Sequence, TypedDict, cast
 from pathlib import Path
 import logging
-import os
 
 from dotenv import load_dotenv
 
 # Configure logging to file
 logging.basicConfig(filename='logs/agent.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 from langgraph.checkpoint.memory import InMemorySaver
-from langgraph.graph import StateGraph, END, START
+from langgraph.graph import StateGraph, END
 from langgraph.graph.message import add_messages 
 from langchain_core.messages import BaseMessage, HumanMessage, ToolMessage, SystemMessage, AIMessage
 
 # Import configuration and tools
-from config.llm_config import embeddings, llm_model
+from config.llm_config import llm_model
 from src.tools import (
     github_agent_tools, comms_agent_tools,
     github_agent_tool_dict, comms_agent_tool_dict
@@ -138,6 +137,7 @@ graph.add_node("github_agent_tools", github_agent_tool_exec)
 graph.add_node("comms_agent", comms_agent_call)
 graph.add_node("comms_agent_tools", comms_agent_tool_exec)
 
+# Start as supervisor 
 graph.set_entry_point("supervisor")
 
 # Supervisor routing based on state["next"]
@@ -152,7 +152,7 @@ graph.add_conditional_edges(
     }
 )
 
-# Helper function for agent loops
+# Helper function for agent tool loops
 def should_continue(state: AgentState):
     last_msg = state["messages"][-1]
     if isinstance(last_msg, AIMessage) and last_msg.tool_calls:
