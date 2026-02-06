@@ -38,11 +38,10 @@ def serializable_dict(obj):
 def sanitize_log(message: str) -> str:
     """Mask sensitive data like tokens and keys in log messages."""
     import re
-    # Mask Slack tokens (xoxb-, xapp-)
+    # Mask Slack bot token (xoxb-)
     message = re.sub(r'xoxb-[^\s]+', '[SLACK_BOT_TOKEN_MASKED]', message)
-    message = re.sub(r'xapp-[^\s]+', '[SLACK_APP_TOKEN_MASKED]', message)
-    # Mask xAI API key (sk-)
-    message = re.sub(r'sk-[^\s]+', '[XAI_API_KEY_MASKED]', message)
+    # Mask xAI API key (xai-)
+    message = re.sub(r'xai-[^\s]+', '[XAI_API_KEY_MASKED]', message)
     # Mask HuggingFace token (hf_)
     message = re.sub(r'hf_[^\s]+', '[HF_TOKEN_MASKED]', message)
     # Mask Slack channel IDs (C0A...)
