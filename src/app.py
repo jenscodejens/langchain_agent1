@@ -35,10 +35,27 @@ def serializable_dict(obj):
         return obj.dict()
     return str(obj)
 
+def sanitize_log(message: str) -> str:
+    """Mask sensitive data like tokens and keys in log messages."""
+    import re
+    # Mask Slack tokens (xoxb-, xapp-)
+    message = re.sub(r'xoxb-[^\s]+', '[SLACK_BOT_TOKEN_MASKED]', message)
+    message = re.sub(r'xapp-[^\s]+', '[SLACK_APP_TOKEN_MASKED]', message)
+    # Mask xAI API key (sk-)
+    message = re.sub(r'sk-[^\s]+', '[XAI_API_KEY_MASKED]', message)
+    # Mask HuggingFace token (hf_)
+    message = re.sub(r'hf_[^\s]+', '[HF_TOKEN_MASKED]', message)
+    # Mask Slack channel IDs (C0A...)
+    message = re.sub(r'C[0-9A-Z]{8,}', '[SLACK_CHANNEL_MASKED]', message)
+    # Mask user IDs (U0A...)
+    message = re.sub(r'U[0-9A-Z]{8,}', '[SLACK_USER_MASKED]', message)
+    return message
+
 async def log_to_file(message: str):
-    """Asynchronously log a message to the conversation history file with a timestamp."""
+    """Asynchronously log a sanitized message to the conversation history file with a timestamp."""
+    sanitized_message = sanitize_log(message)
     timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
-    log_entry = f"[{timestamp}] {message}\n"
+    log_entry = f"[{timestamp}] {sanitized_message}\n"
     async with log_lock:
         os.makedirs(os.path.dirname(LOG_FILE_PATH), exist_ok=True)
         with open(LOG_FILE_PATH, 'a', encoding='utf-8') as f:

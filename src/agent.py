@@ -124,10 +124,7 @@ def supervisor(state: AgentState):
 
     logger.info(f"Supervisor routing to {next_node} (Reason: {reason})")
     
-    return {
-        "next": next_node, 
-        "messages": [AIMessage(content=f"Routing decision: {next_node} ({reason})")]
-    }
+    return {"next": next_node}
 
 # Graph construction
 graph = StateGraph(AgentState)

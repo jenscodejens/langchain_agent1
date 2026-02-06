@@ -174,7 +174,6 @@ temp_*/
 mcp_server.py
 free-port.ps1
 logs/
-/README.md
 id.py
 slack_push_only_test.py
 id_slack_check.py
