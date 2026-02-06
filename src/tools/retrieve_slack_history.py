@@ -12,7 +12,9 @@ logging.basicConfig(level=logging.DEBUG)
 def retrieve_slack_history(limit: int = 20) -> str:
     """Fetches recent history from the Slack channel ai-bot-tester."""
     client = WebClient(token=os.environ.get("SLACK_BOT_TOKEN"))
-    channel_id = "C0ABRUY7VSP" # Your specific channel
+    channel_id = os.environ.get("SLACK_CHANNEL_ID")
+    if not channel_id:
+        return "SLACK_CHANNEL_ID environment variable not set. Please add it to your .env file."
     
     try:
         # Fetch history using the token's 'channels:history' scope

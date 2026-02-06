@@ -75,6 +75,7 @@ There will be no decay applied to the conversion of any NFTs.
 
 
 ### VI. AIX Purchase & Airdrop
+
 ## Purchasing AIX
 AIX will be available for purchase on Decentralized Exchanges (DEX) on Base, such as QuickSwap. The official contract address will be shared immediately upon launch.
 ## AIX Airdrop
