@@ -171,8 +171,9 @@ embedding_model/
 temp_*/
 .files/
 .DS_Store
-/mcp_server.py
-/free-port.ps1
+mcp_server.py
+free-port.ps1
 logs/
-/README.md
-
+id.py
+slack_push_only_test.py
+id_slack_check.py
