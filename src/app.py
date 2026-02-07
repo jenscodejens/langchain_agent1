@@ -168,24 +168,24 @@ async def main(message: cl.Message):
             ai_response_buffer.clear() 
 
             # Handle token usage accounting
-            output = event["data"].get("output")
-            if output and hasattr(output, 'usage_metadata') and output.usage_metadata:
-                usage = output.usage_metadata
-                tokens = usage.get("total_tokens", 0)
-                message_tokens += tokens
-                total_tokens += tokens
-                cl.user_session.set("total_tokens", total_tokens)
+            #output = event["data"].get("output")
+            #if output and hasattr(output, 'usage_metadata') and output.usage_metadata:
+            #    usage = output.usage_metadata
+            #    tokens = usage.get("total_tokens", 0)
+            #    message_tokens += tokens
+            #    total_tokens += tokens
+            #    cl.user_session.set("total_tokens", total_tokens)
 
     # 4. Finalize the AI message in the UI
     if ai_msg:
         await ai_msg.update()
 
     # 5. Token usage report (System message)
-    if message_tokens > 0:
-        await cl.Message(
-            content=f"**Tokens used:** {message_tokens} | **Total session:** {total_tokens}", 
-            author="System"
-        ).send()
+    #if message_tokens > 0:
+    #    await cl.Message(
+    #        content=f"**Tokens used:** {message_tokens} | **Total session:** {total_tokens}", 
+    #        author="System"
+    #    ).send()
 
     # Save state reference
     cl.user_session.set("thread_id", config.get("configurable", {}).get("thread_id", "default"))
