@@ -38,11 +38,10 @@ def serializable_dict(obj):
 def sanitize_log(message: str) -> str:
     """Mask sensitive data like tokens and keys in log messages."""
     import re
-    # Mask Slack tokens (xoxb-, xapp-)
+    # Mask Slack bot token (xoxb-)
     message = re.sub(r'xoxb-[^\s]+', '[SLACK_BOT_TOKEN_MASKED]', message)
-    message = re.sub(r'xapp-[^\s]+', '[SLACK_APP_TOKEN_MASKED]', message)
-    # Mask xAI API key (sk-)
-    message = re.sub(r'sk-[^\s]+', '[XAI_API_KEY_MASKED]', message)
+    # Mask xAI API key (xai-)
+    message = re.sub(r'xai-[^\s]+', '[XAI_API_KEY_MASKED]', message)
     # Mask HuggingFace token (hf_)
     message = re.sub(r'hf_[^\s]+', '[HF_TOKEN_MASKED]', message)
     # Mask Slack channel IDs (C0A...)
@@ -169,24 +168,24 @@ async def main(message: cl.Message):
             ai_response_buffer.clear() 
 
             # Handle token usage accounting
-            output = event["data"].get("output")
-            if output and hasattr(output, 'usage_metadata') and output.usage_metadata:
-                usage = output.usage_metadata
-                tokens = usage.get("total_tokens", 0)
-                message_tokens += tokens
-                total_tokens += tokens
-                cl.user_session.set("total_tokens", total_tokens)
+            #output = event["data"].get("output")
+            #if output and hasattr(output, 'usage_metadata') and output.usage_metadata:
+            #    usage = output.usage_metadata
+            #    tokens = usage.get("total_tokens", 0)
+            #    message_tokens += tokens
+            #    total_tokens += tokens
+            #    cl.user_session.set("total_tokens", total_tokens)
 
     # 4. Finalize the AI message in the UI
     if ai_msg:
         await ai_msg.update()
 
     # 5. Token usage report (System message)
-    if message_tokens > 0:
-        await cl.Message(
-            content=f"**Tokens used:** {message_tokens} | **Total session:** {total_tokens}", 
-            author="System"
-        ).send()
+    #if message_tokens > 0:
+    #    await cl.Message(
+    #        content=f"**Tokens used:** {message_tokens} | **Total session:** {total_tokens}", 
+    #        author="System"
+    #    ).send()
 
     # Save state reference
     cl.user_session.set("thread_id", config.get("configurable", {}).get("thread_id", "default"))

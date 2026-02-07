@@ -41,13 +41,8 @@ python src/run_chainlit.py
 - Chat with agents: e.g., \"What's in repo X?\" → GitHub Agent; \"PlanetIX staking info?\" → Comms Agent.
 
 ## 🏗️ Architecture
-```
-User Query (Chainlit UI)
-    ↓
-Supervisor (LangGraph)
-    ├─→ GitHub Agent → Tools (retrieve_github_info, list_repos, read_file) → RAG (github.db)
-    └─→ Comms Agent → Tools (retrieve_comms_info, retrieve_slack_history) → RAG (planetix_comms.db)
-```
+- **Web Ui**: Chainlit
+- **Agents (LangGraph)**: Supervisor, Github, Comms
 - **State Management**: In-memory checkpointer for conversations.
 - **Retrieval**: Chroma DB with repo/doc metadata filtering.
 - **Logging**: `logs/agent.log`, `logs/conversation_history.log`.
@@ -95,14 +90,17 @@ python scripts/initialize_github_rag.py
 python scripts/initialize_local_md_rag.py
 
 # Web pages (if needed)
-python scripts/initialize_comms_web_rag.py
+python scripts/initialize_comms_web_rag.py - not completed
 ```
 Databases: `github.db`, `planetix_comms.db`.
 
 ## ⚙️ Configuration
-- `config/llm_config.py`: Embeddings (bge-m3), LLM (Grok).
-- `config/github_repositories.json`: Tracked repos.
-- `config/*.md`: System messages for agents/supervisor.
+- [`config/llm_config.py`](config/llm_config.py): Embeddings (bge-m3), LLM (Grok).
+- [`config/comms.json`](config/comms.json): PlanetIX Comms documentation URLs.
+- [`config/github_repositories.json`](config/github_repositories.json): Tracked GitHub repositories.
+- [`config/comms_systemmessage.md`](config/comms_systemmessage.md): System message for Comms Agent ("PlanetIX Dispatch").
+- [`config/github_systemmessage.md`](config/github_systemmessage.md): System message for GitHub Agent ("Stack von Overflow").
+- [`config/supervisor_systemmessage.md`](config/supervisor_systemmessage.md): System message for Supervisor Agent.
 
 ## 🛠️ Tools API Reference
 | Tool | Agent | Description |

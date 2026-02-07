@@ -1,4 +1,5 @@
 from langchain_chroma import Chroma
+from chromadb.config import Settings
 from config.llm_config import embeddings
 from langchain_core.documents import Document
 from langchain_community.retrievers import BM25Retriever
@@ -23,7 +24,8 @@ def get_hybrid_retriever(persist_dir, collection_name, repo_filter=None, top_n=5
     vectorstore = Chroma(
         persist_directory=persist_dir, 
         embedding_function=embeddings, 
-        collection_name=collection_name
+        collection_name=collection_name,
+        client_settings=Settings(anonymized_telemetry=False)
     )
 
     # Apply filter if provided (specific to GitHub logic)
