@@ -6,7 +6,15 @@ import logging
 from dotenv import load_dotenv
 
 # Configure logging to file
-logging.basicConfig(filename='logs/agent.log', level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    filename='logs/agent.log', 
+    level=logging.INFO, 
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+# Suppress noisy INFO logs from httpx and huggingface
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("huggingface_hub").setLevel(logging.WARNING)
+
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import StateGraph, END
 from langgraph.graph.message import add_messages 
