@@ -44,10 +44,23 @@ class WebIngestor(BaseIngestor):
         """Fetch and process content from a URL."""
         try:
             with sync_playwright() as p:
-                browser = p.chromium.launch(headless=True)
+                browser = p.chromium.launch(
+                    headless=True,
+                    args=[
+                        "--no-sandbox",
+                        "--disable-setuid-sandbox",
+                        "--disable-blink-features=AutomationControlled"
+                    ]
+                )
                 page = browser.new_page()
-                page.goto(url, wait_until='networkidle')
+                page.set_extra_http_headers({
+                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                })
+                page.set_viewport_size({"width": 1920, "height": 1080})
+                page.goto(url, wait_until="domcontentloaded", timeout=120000)
+                page.wait_for_timeout(5000)
                 downloaded = page.content()
+                browser.close()
             if not downloaded:
                 logger.warning(f"Could not fetch content from: {url}")
                 return []
