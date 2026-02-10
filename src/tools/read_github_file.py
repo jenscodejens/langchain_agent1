@@ -16,7 +16,7 @@ def read_github_file(repo_name: str, file_path: str) -> str:
     token = os.getenv("GITHUB_TOKEN")
     headers = {
         "Authorization": f"token {token}" if token else "",
-        "User-Agent": "C-3PO-Agent"
+        "User-Agent": ""
     }
 
     try:

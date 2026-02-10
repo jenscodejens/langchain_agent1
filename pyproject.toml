@@ -32,6 +32,7 @@ dependencies = [
     "flask>=3.1.2",
     "ngrok>=1.7.0",
     "slackstyler>=0.0.3",
+    "playwright>=1.58.0",
 ]
 
 [dependency-groups]
