@@ -3,7 +3,9 @@ import logging
 import re
 from langchain_core.documents import Document
 import trafilatura
+from playwright.sync_api import sync_playwright
 from .base_ingestor import BaseIngestor
+from util.progress import progress_bar
 
 logger = logging.getLogger(__name__)
 
@@ -31,18 +33,35 @@ class WebIngestor(BaseIngestor):
     def load_documents(self) -> list[Document]:
         """Load documents from web URLs."""
         documents = []
-
-        for url in self.urls:
+        total = len(self.urls)
+        for i, url in enumerate(self.urls):
             logger.info(f"Processing: {url}")
             docs = self._fetch_and_process_url(url)
+            progress_bar(i + 1, total)
             documents.extend(docs)
-
         return documents
 
     def _fetch_and_process_url(self, url: str) -> list[Document]:
         """Fetch and process content from a URL."""
         try:
-            downloaded = trafilatura.fetch_url(url)
+            with sync_playwright() as p:
+                browser = p.chromium.launch(
+                    headless=True,
+                    args=[
+                        "--no-sandbox",
+                        "--disable-setuid-sandbox",
+                        "--disable-blink-features=AutomationControlled"
+                    ]
+                )
+                page = browser.new_page()
+                page.set_extra_http_headers({
+                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                })
+                page.set_viewport_size({"width": 1920, "height": 1080})
+                page.goto(url, wait_until="domcontentloaded", timeout=120000)
+                page.wait_for_timeout(5000)
+                downloaded = page.content()
+                browser.close()
             if not downloaded:
                 logger.warning(f"Could not fetch content from: {url}")
                 return []

@@ -29,12 +29,18 @@ Agentic LangChain-based RAG application for querying GitHub repositories, Planet
 3. Set environment variables (`.env`):
    ```
    XAI_API_KEY=your_xai_key
+   USER_AGENT=set to whatever
+   HF_TOKEN=your_huggingface_token # Optional
    SLACK_BOT_TOKEN=your_slack_token  # Optional
    SLACK_APP_TOKEN=your_slack_app_token  # Optional
+   SLACK_SIGNING_SECRET=your_slack_signing_secret # Optional
+   NGROK_AUTHTOKEN=your_ngrok_token # Optional 
+   NGROK_DOMAIN=your_ngrok_domain # Optional
    ```
 
 ## 🚀 Quick Start
 ```bash
+python preload_models.py
 python src/run_chainlit.py
 ```
 - Opens Chainlit UI at `http://localhost:8000`.
@@ -77,7 +83,7 @@ graph TD
 │   ├── tools/           # Agent tools (@tool decorated)
 │   └── slack_server.py  # Slack Bolt app
 ├── util/                # Utilities (progress)
-└── pyproject.toml      # Dependencies (uv/pip)
+└── pyproject.toml       # Dependencies (uv/pip)
 ```
 
 ## 🔧 Data Ingestion
@@ -90,13 +96,13 @@ python scripts/initialize_github_rag.py
 python scripts/initialize_local_md_rag.py
 
 # Web pages (if needed)
-python scripts/initialize_comms_web_rag.py - not completed
+python scripts/initialize_comms_web_rag.py
 ```
 Databases: `github.db`, `planetix_comms.db`.
 
 ## ⚙️ Configuration
 - [`config/llm_config.py`](config/llm_config.py): Embeddings (bge-m3), LLM (Grok).
-- [`config/comms.json`](config/comms.json): PlanetIX Comms documentation URLs.
+- [`config/comms.documentation.json`](config/comms.documentation.json): PlanetIX Comms documentation URLs.
 - [`config/github_repositories.json`](config/github_repositories.json): Tracked GitHub repositories.
 - [`config/comms_systemmessage.md`](config/comms_systemmessage.md): System message for Comms Agent ("PlanetIX Dispatch").
 - [`config/github_systemmessage.md`](config/github_systemmessage.md): System message for GitHub Agent ("Stack von Overflow").
@@ -123,20 +129,3 @@ Exposes `/slash` command for agent queries in Slack.
 - **Debug**: Add `-d` flag.
 - **Logs**: Check `logs/` directory.
 - **Preload Models**: `python scripts/preload_models.py`.
-
-## 🤝 Contributing
-1. Fork & PR.
-2. Run `uv sync`.
-3. Add tests/docs.
-
-## 📄 License
-MIT (assumed).
-
-## 📚 Full Documentation
-
-See [docs/index.md](docs/index.md)
-
-## � Acknowledgments
-- [LangChain](https://langchain.com), [LangGraph](https://langgraph.com)
-- [Chainlit](https://chainlit.io)
-- [xAI Grok](https://x.ai)
