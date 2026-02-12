@@ -5,6 +5,7 @@ from langchain_core.documents import Document
 import trafilatura
 from playwright.sync_api import sync_playwright
 from .base_ingestor import BaseIngestor
+from util.progress import progress_bar
 
 logger = logging.getLogger(__name__)
 
@@ -32,12 +33,12 @@ class WebIngestor(BaseIngestor):
     def load_documents(self) -> list[Document]:
         """Load documents from web URLs."""
         documents = []
-
-        for url in self.urls:
+        total = len(self.urls)
+        for i, url in enumerate(self.urls):
             logger.info(f"Processing: {url}")
             docs = self._fetch_and_process_url(url)
+            progress_bar(i + 1, total)
             documents.extend(docs)
-
         return documents
 
     def _fetch_and_process_url(self, url: str) -> list[Document]:
