@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Initialize communications RAG database from web URLs.
 """
@@ -11,7 +10,7 @@ from ingestion.web_ingestor import WebIngestor
 
 def main():
     script_dir = os.path.dirname(__file__)
-    config_file = os.path.join(script_dir, '..', 'config', 'comms.json')
+    config_file = os.path.join(script_dir, '..', 'config', 'comms_documentation.json')
     persist_dir = os.path.join(script_dir, '..', 'planetix_comms.db')
     ingestor = WebIngestor(config_file, persist_directory=persist_dir)
     ingestor.run_ingestion()

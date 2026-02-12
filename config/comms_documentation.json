@@ -1,0 +1,15 @@
+{
+  "_comment": "Temporary way of adding with Comms url's for hroma_doc_db",
+  "comms_docs": [
+    "https://comms.planetix.com/AIXT",
+    "https://comms.planetix.com/migration-information",
+    "https://comms.planetix.com/introducing-AIX",
+    "https://comms.planetix.com/mp-on-base",
+    "https://comms.planetix.com/crystals-on-Base",
+    "https://comms.planetix.com/AIX-single-staking",
+    "https://comms.planetix.com/why-base",
+    "https://comms.planetix.com/get-ready",
+    "https://comms.planetix.com/season2",
+    "https://comms.planetix.com/AIX-calculator"
+  ]
+}
